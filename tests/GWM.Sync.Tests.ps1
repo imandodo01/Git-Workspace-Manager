@@ -179,4 +179,32 @@ Describe 'GWM guarded fast-forward executor' {
         $result.AfterCommit | Should Be $before
         (Test-Path -LiteralPath (Join-Path $script:GwmSyncFixture.Local 'remote-update.txt')) | Should Be $false
     }
+
+    It 'continues syncing independent repositories after one repository fails' {
+        $secondFixture = New-GwmSyncFixture
+        try {
+            $badRepository = [pscustomobject]@{
+                Name='missing-repository'
+                Path=(Join-Path $script:GwmSyncFixture.Root 'missing-repository')
+                Remote='origin'
+            }
+            Add-GwmSyncTestCommit -RepositoryPath $secondFixture.Seed -FileName 'remote-update.txt' -Value 'remote update' -Message 'remote update'
+            Invoke-GwmSyncTestGit -RepositoryPath $secondFixture.Seed -Arguments @('push', 'origin', $secondFixture.Branch) | Out-Null
+            $expected = Invoke-GwmSyncTestGit -RepositoryPath $secondFixture.Seed -Arguments @('rev-parse', 'HEAD')
+
+            $results = @(Invoke-GwmSyncForRepositories -Repositories @($badRepository, $secondFixture.Repository))
+
+            $results.Count | Should Be 2
+            $results[0].SyncStatus | Should Be 'FAILED'
+            $results[1].SyncStatus | Should Be 'UPDATED'
+            $results[1].AfterCommit | Should Be $expected
+            (Invoke-GwmSyncTestGit -RepositoryPath $secondFixture.Local -Arguments @('rev-parse', 'HEAD')) | Should Be $expected
+        }
+        finally {
+            if (Test-Path -LiteralPath $secondFixture.Root) {
+                Remove-Item -LiteralPath $secondFixture.Root -Recurse -Force
+            }
+        }
+    }
+
 }
