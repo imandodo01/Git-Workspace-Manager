@@ -41,10 +41,10 @@ Create a bare remote and local clones in a disposable test root. Simulate:
 ### Current automated coverage
 
 - `tests/GWM.Core.Tests.ps1`: 5 classification unit tests.
-- `tests/GWM.Integration.Tests.ps1`: repository state inspection and JSON report integration scenarios.
+- `tests/GWM.Integration.Tests.ps1`: repository state inspection, JSON report, real working-tree state-change detection, and diverged-history fast-forward rejection.
 - `tests/GWM.Safety.Tests.ps1`: URL redaction, sync eligibility, state snapshot comparison, fetch failure isolation, fetch preservation, and credential redaction.
 
-The user previously reported 15/15 tests passing before the safety suite was added. The new safety suite has not yet been run in the user's Windows PowerShell 5.1/Pester 3.4.0 environment. The fetch and safety functions are not wired into the GWM scan entry point, and no working-branch update is implemented.
+The user reported 23/23 tests passing on Windows PowerShell 5.1/Pester 3.4.0 before the two latest integration tests were added. The latest additions have not yet been run in the user's environment. The fetch and safety functions are not wired into the GWM scan entry point, and no working-branch update is implemented.
 
 ## 4. Safety assertions
 
