@@ -16,7 +16,7 @@ Prohibited in normal operation:
 - `git clean`
 - `git checkout --` or `git restore` that discards work
 - `git stash` / automatic stash application
-- Automatic merge or rebase
+- Merge commits, conflict resolution, or automatic rebase
 - Commit, push, force-push, branch deletion, or history rewrite
 - Any command that silently overwrites user files
 
@@ -30,7 +30,9 @@ A repository is eligible only when all conditions are true:
 5. The configured remote is available and fetch succeeds.
 6. The local branch is behind its upstream and not ahead.
 7. The relationship is strictly fast-forwardable.
-8. The repository state has not changed unexpectedly between inspection and update.
+8. The branch upstream belongs to the configured remote that was fetched.
+9. The fetched upstream commit SHA is pinned and re-confirmed immediately before update.
+10. The repository state has not changed unexpectedly between inspection and update.
 
 If any condition is false or uncertain, do not update the working branch.
 
@@ -60,7 +62,7 @@ If any condition is false or uncertain, do not update the working branch.
 
 ## 6. Race and consistency handling
 
-A developer or background process may change repository state during a run. Re-check status and HEAD immediately before updating. If the branch, index, or working tree differs from the inspected state, abort that repository's update and report that it changed during synchronization. Use fast-forward-only behavior as a final guard.
+A developer or background process may change repository state during a run. Re-check status and HEAD immediately before updating. If the branch, index, or working tree differs from the inspected state, abort that repository's update and report that it changed during synchronization. Use git merge --ff-only --no-edit <pinned-target-sha> as the final guard. Do not substitute a moving upstream name after the target SHA has been captured.
 
 ## 7. Manual resolution guidance
 
