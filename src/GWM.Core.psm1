@@ -304,6 +304,14 @@ function Invoke-GwmFastForward {
         return New-GwmSyncResult -Status 'FAILED' -Reason $beforeFetch.Reason -RecommendedAction 'Verify the repository path and Git working tree.' -BeforeCommit $null -AfterCommit $null -TargetCommit $null -Ahead $null -Behind $null -ExitCode 2
     }
 
+    # A detached branch or branch without an upstream cannot be synchronized.
+    # Classify it before contacting the configured remote so a missing origin
+    # does not mask the actionable repository configuration state.
+    if ($beforeFetch.Detached -or [string]::IsNullOrWhiteSpace([string]$beforeFetch.Upstream)) {
+        $eligibility = Get-GwmSyncEligibility -State $beforeFetch
+        return New-GwmSyncResult -Status 'NEEDS_ATTENTION' -Reason $eligibility.Reason -RecommendedAction $beforeFetch.RecommendedAction -BeforeCommit $beforeFetch.Head -AfterCommit $beforeFetch.Head -TargetCommit $null -Ahead $beforeFetch.Ahead -Behind $beforeFetch.Behind -ExitCode 0
+    }
+
     $fetch = Invoke-GwmFetch -Repository $Repository
     if (-not $fetch.Success) {
         return New-GwmSyncResult -Status 'FAILED' -Reason ("Fetch failed for remote '{0}': {1}" -f $fetch.Remote, $fetch.Output) -RecommendedAction 'Check remote configuration and network/authentication, then run Sync again.' -BeforeCommit $beforeFetch.Head -AfterCommit $beforeFetch.Head -TargetCommit $null -Ahead $beforeFetch.Ahead -Behind $beforeFetch.Behind -ExitCode $fetch.ExitCode
