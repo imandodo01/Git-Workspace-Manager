@@ -269,4 +269,98 @@ function Get-GwmRepositoryState {
     }
 }
 
+
+function New-GwmSyncResult {
+    param(
+        [string]$Status,
+        [string]$Reason,
+        [string]$RecommendedAction,
+        [AllowNull()][string]$BeforeCommit,
+        [AllowNull()][string]$AfterCommit,
+        [AllowNull()][string]$TargetCommit,
+        [AllowNull()][int]$Ahead,
+        [AllowNull()][int]$Behind,
+        [AllowNull()][int]$ExitCode
+    )
+    [pscustomobject]@{
+        SyncStatus=$Status
+        Reason=$Reason
+        RecommendedAction=$RecommendedAction
+        BeforeCommit=$BeforeCommit
+        AfterCommit=$AfterCommit
+        TargetCommit=$TargetCommit
+        Ahead=$Ahead
+        Behind=$Behind
+        ExitCode=$ExitCode
+    }
+}
+
+function Invoke-GwmFastForward {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)]$Repository)
+
+    $beforeFetch = Get-GwmRepositoryState -Repository $Repository
+    if (-not $beforeFetch.IsRepository) {
+        return New-GwmSyncResult -Status 'FAILED' -Reason $beforeFetch.Reason -RecommendedAction 'Verify the repository path and Git working tree.' -BeforeCommit $null -AfterCommit $null -TargetCommit $null -Ahead $null -Behind $null -ExitCode 2
+    }
+
+    $fetch = Invoke-GwmFetch -Repository $Repository
+    if (-not $fetch.Success) {
+        return New-GwmSyncResult -Status 'FAILED' -Reason ("Fetch failed for remote '{0}': {1}" -f $fetch.Remote, $fetch.Output) -RecommendedAction 'Check remote configuration and network/authentication, then run Sync again.' -BeforeCommit $beforeFetch.Head -AfterCommit $beforeFetch.Head -TargetCommit $null -Ahead $beforeFetch.Ahead -Behind $beforeFetch.Behind -ExitCode $fetch.ExitCode
+    }
+
+    $afterFetch = Get-GwmRepositoryState -Repository $Repository
+    if (-not (Test-GwmRepositoryStateUnchanged -Before $beforeFetch -After $afterFetch)) {
+        return New-GwmSyncResult -Status 'NEEDS_ATTENTION' -Reason 'Repository state changed while fetching; no working-branch update was attempted.' -RecommendedAction 'Inspect the repository state and run Sync again when no other Git operation is active.' -BeforeCommit $beforeFetch.Head -AfterCommit $afterFetch.Head -TargetCommit $null -Ahead $afterFetch.Ahead -Behind $afterFetch.Behind -ExitCode 0
+    }
+
+    $eligibility = Get-GwmSyncEligibility -State $afterFetch
+    if (-not $eligibility.Eligible) {
+        $status = if ($afterFetch.Classification -eq 'UP_TO_DATE') { 'UP_TO_DATE' } else { 'NEEDS_ATTENTION' }
+        return New-GwmSyncResult -Status $status -Reason $eligibility.Reason -RecommendedAction $afterFetch.RecommendedAction -BeforeCommit $afterFetch.Head -AfterCommit $afterFetch.Head -TargetCommit $null -Ahead $afterFetch.Ahead -Behind $afterFetch.Behind -ExitCode 0
+    }
+
+    $remote = [string]$Repository.Remote
+    $expectedPrefix = $remote + '/'
+    if (-not $afterFetch.Upstream.StartsWith($expectedPrefix, [System.StringComparison]::Ordinal)) {
+        return New-GwmSyncResult -Status 'NEEDS_ATTENTION' -Reason ("Branch upstream '{0}' does not belong to configured remote '{1}'." -f $afterFetch.Upstream, $remote) -RecommendedAction 'Align the repository remote setting and branch upstream, then run Sync again.' -BeforeCommit $afterFetch.Head -AfterCommit $afterFetch.Head -TargetCommit $null -Ahead $afterFetch.Ahead -Behind $afterFetch.Behind -ExitCode 0
+    }
+
+    $targetResult = Invoke-GwmGit -RepositoryPath $Repository.Path -Arguments @('rev-parse', '--verify', ($afterFetch.Upstream + '^{commit}'))
+    if ($targetResult.ExitCode -ne 0 -or $targetResult.Output -notmatch '^[0-9a-fA-F]{40,64}Get-GwmConfiguration, Find-GwmRepositories, Invoke-GwmGit, Get-GwmRepositoryState, Get-GwmStateClassification, ConvertTo-GwmRedactedRemoteUrl, Get-GwmSyncEligibility, Test-GwmRepositoryStateUnchanged, Invoke-GwmFetch, Invoke-GwmFetchForRepositories, Invoke-GwmFastForward
+) {
+        return New-GwmSyncResult -Status 'FAILED' -Reason 'Unable to resolve the fetched upstream to a commit SHA.' -RecommendedAction 'Inspect the configured upstream and fetched remote-tracking reference.' -BeforeCommit $afterFetch.Head -AfterCommit $afterFetch.Head -TargetCommit $null -Ahead $afterFetch.Ahead -Behind $afterFetch.Behind -ExitCode $targetResult.ExitCode
+    }
+    $targetCommit = $targetResult.Output.ToLowerInvariant()
+
+    $ancestorResult = Invoke-GwmGit -RepositoryPath $Repository.Path -Arguments @('merge-base', '--is-ancestor', 'HEAD', $targetCommit)
+    if ($ancestorResult.ExitCode -ne 0) {
+        $status = if ($ancestorResult.ExitCode -eq 1) { 'NEEDS_ATTENTION' } else { 'FAILED' }
+        return New-GwmSyncResult -Status $status -Reason 'The fetched target is not confirmed as a fast-forward descendant of HEAD.' -RecommendedAction 'Review local and upstream history manually; GWM will not merge or rebase.' -BeforeCommit $afterFetch.Head -AfterCommit $afterFetch.Head -TargetCommit $targetCommit -Ahead $afterFetch.Ahead -Behind $afterFetch.Behind -ExitCode $ancestorResult.ExitCode
+    }
+
+    $beforeUpdate = Get-GwmRepositoryState -Repository $Repository
+    if (-not (Test-GwmRepositoryStateUnchanged -Before $afterFetch -After $beforeUpdate)) {
+        return New-GwmSyncResult -Status 'NEEDS_ATTENTION' -Reason 'Repository state changed immediately before update; no working-branch update was attempted.' -RecommendedAction 'Inspect the repository state and run Sync again when no other Git operation is active.' -BeforeCommit $afterFetch.Head -AfterCommit $beforeUpdate.Head -TargetCommit $targetCommit -Ahead $beforeUpdate.Ahead -Behind $beforeUpdate.Behind -ExitCode 0
+    }
+
+    $confirmedTarget = Invoke-GwmGit -RepositoryPath $Repository.Path -Arguments @('rev-parse', '--verify', ($beforeUpdate.Upstream + '^{commit}'))
+    if ($confirmedTarget.ExitCode -ne 0 -or $confirmedTarget.Output.ToLowerInvariant() -cne $targetCommit) {
+        return New-GwmSyncResult -Status 'NEEDS_ATTENTION' -Reason 'The upstream tracking reference changed after the target commit was captured.' -RecommendedAction 'Fetch and inspect the repository again before attempting an update.' -BeforeCommit $beforeUpdate.Head -AfterCommit $beforeUpdate.Head -TargetCommit $targetCommit -Ahead $beforeUpdate.Ahead -Behind $beforeUpdate.Behind -ExitCode $confirmedTarget.ExitCode
+    }
+
+    $mergeResult = Invoke-GwmGit -RepositoryPath $Repository.Path -Arguments @('merge', '--ff-only', '--no-edit', $targetCommit)
+    if ($mergeResult.ExitCode -ne 0) {
+        $afterFailure = Get-GwmRepositoryState -Repository $Repository
+        return New-GwmSyncResult -Status 'FAILED' -Reason ("Fast-forward-only update was rejected: {0}" -f $mergeResult.Output) -RecommendedAction 'Do not retry with merge or rebase. Inspect the repository manually and resolve any in-progress Git operation.' -BeforeCommit $beforeUpdate.Head -AfterCommit $afterFailure.Head -TargetCommit $targetCommit -Ahead $afterFailure.Ahead -Behind $afterFailure.Behind -ExitCode $mergeResult.ExitCode
+    }
+
+    $afterUpdate = Get-GwmRepositoryState -Repository $Repository
+    if (-not $afterUpdate.IsRepository -or $afterUpdate.Detached -or $afterUpdate.Head -cne $targetCommit -or $afterUpdate.IsDirty -or $afterUpdate.Ahead -ne 0 -or $afterUpdate.Behind -ne 0) {
+        return New-GwmSyncResult -Status 'FAILED' -Reason 'Post-update verification failed: HEAD, branch state, divergence, or working-tree cleanliness did not match the expected target.' -RecommendedAction 'Stop further synchronization and inspect the repository manually.' -BeforeCommit $beforeUpdate.Head -AfterCommit $afterUpdate.Head -TargetCommit $targetCommit -Ahead $afterUpdate.Ahead -Behind $afterUpdate.Behind -ExitCode 1
+    }
+
+    New-GwmSyncResult -Status 'UPDATED' -Reason 'Branch fast-forwarded to the fetched upstream commit and post-update verification passed.' -RecommendedAction 'No further action required.' -BeforeCommit $beforeUpdate.Head -AfterCommit $afterUpdate.Head -TargetCommit $targetCommit -Ahead $afterUpdate.Ahead -Behind $afterUpdate.Behind -ExitCode 0
+}
+
 Export-ModuleMember -Function Get-GwmConfiguration, Find-GwmRepositories, Invoke-GwmGit, Get-GwmRepositoryState, Get-GwmStateClassification, ConvertTo-GwmRedactedRemoteUrl, Get-GwmSyncEligibility, Test-GwmRepositoryStateUnchanged, Invoke-GwmFetch, Invoke-GwmFetchForRepositories
