@@ -14,7 +14,7 @@
 
 - The user verified 25 passed, 0 failed, 0 skipped, 0 pending, 0 inconclusive on Windows PowerShell 5.1 with Pester 3.4.0. This result covers the scanner, integration, and fetch-safety suites before the guarded executor tests were added.
 - Nine additional tests in tests/GWM.Sync.Tests.ps1 cover executor success, no-op behavior, dirty/ahead/diverged/detached/no-upstream rejection, fetch failure, remote/upstream mismatch, and per-repository failure isolation.
-- The current expected suite size is 34 tests. The user has not yet run this updated suite.
+- The current expected suite size is 35 tests. The user has not yet run this updated suite.
 - All integration tests use disposable local repositories and bare remotes; they do not operate on the user's configured workspace.
 - The assistant performed static source and test review only; it did not execute Pester or PowerShell in the user's Windows environment.
 
