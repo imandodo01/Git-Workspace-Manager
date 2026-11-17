@@ -138,7 +138,10 @@ function Get-GwmRepositoryState {
     $upstreamResult = Invoke-GwmGit -RepositoryPath $Repository.Path -Arguments @('rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}')
     $statusResult = Invoke-GwmGit -RepositoryPath $Repository.Path -Arguments @('status', '--porcelain', '--untracked-files=all')
     $branch = $branchResult.Output
-    $files = if ([string]::IsNullOrWhiteSpace($statusResult.Output)) { @() } else { @($statusResult.Output -split '\r?\n' | Where-Object { $_ }) }
+    $files = @()
+    if (-not [string]::IsNullOrWhiteSpace($statusResult.Output)) {
+        $files = @($statusResult.Output -split '\r?\n' | Where-Object { $_ })
+    }
     $ahead = $null
     $behind = $null
     if ($upstreamResult.ExitCode -eq 0) {
