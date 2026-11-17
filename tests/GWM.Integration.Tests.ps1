@@ -314,6 +314,23 @@ Describe 'GWM repository state integration' {
     }
 
 
+    It 'returns an attention exit code for a branch without upstream even when origin is absent' {
+        Set-GwmEntryPointSettings -ProjectRoot $script:GwmFixture.Root -WorkspaceRoot $script:GwmFixture.Local
+        Invoke-GwmTestGit -RepositoryPath $script:GwmFixture.Local -Arguments @('branch', '--unset-upstream') | Out-Null
+        Invoke-GwmTestGit -RepositoryPath $script:GwmFixture.Local -Arguments @('remote', 'remove', 'origin') | Out-Null
+        $beforeHead = Invoke-GwmTestGit -RepositoryPath $script:GwmFixture.Local -Arguments @('rev-parse', 'HEAD')
+
+        $run = Invoke-GwmEntryPoint -ProjectRoot $script:GwmFixture.Root -Mode 'Sync'
+
+        $run.ExitCode | Should Be 1
+        (Invoke-GwmTestGit -RepositoryPath $script:GwmFixture.Local -Arguments @('rev-parse', 'HEAD')) | Should Be $beforeHead
+        $report = Get-Content -LiteralPath (Join-Path $script:GwmFixture.Root 'reports/latest-sync.json') -Raw | ConvertFrom-Json
+        $report.Summary.NeedsAttention | Should Be 1
+        $report.Summary.Failed | Should Be 0
+        $report.Results[0].SyncStatus | Should Be 'NEEDS_ATTENTION'
+        $report.Results[0].Reason | Should Match 'No unambiguous upstream'
+    }
+
     It 'returns a failure exit code and records a failed fetch without updating the branch' {
         Set-GwmEntryPointSettings -ProjectRoot $script:GwmFixture.Root -WorkspaceRoot $script:GwmFixture.Local
         $missingRemote = Join-Path $script:GwmFixture.Root 'missing-remote.git'
