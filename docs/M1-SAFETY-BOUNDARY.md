@@ -44,4 +44,4 @@ Run on Windows PowerShell 5.1 with Pester 3.4.0:
 Invoke-Pester .\tests
 ~~~
 
-The user confirmed 25/25 tests passing before the executor and its nine integration tests were added. The expected suite size is now 34 tests. The executor tests have not yet been run in the user's Windows environment.
+The user confirmed 25/25 tests passing before the executor and its ten integration tests were added. The expected suite size is now 35 tests. The executor tests have not yet been run in the user's Windows environment.
