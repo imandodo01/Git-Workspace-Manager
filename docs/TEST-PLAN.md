@@ -43,9 +43,9 @@ Create a bare remote and local clones in a disposable test root. Simulate:
 - `tests/GWM.Core.Tests.ps1`: 5 classification unit tests.
 - `tests/GWM.Integration.Tests.ps1`: repository state inspection, JSON report, real working-tree state-change detection, and diverged-history fast-forward rejection.
 - `tests/GWM.Safety.Tests.ps1`: URL redaction, sync eligibility, state snapshot comparison, fetch failure isolation, fetch preservation, and credential redaction.
-- `tests/GWM.Sync.Tests.ps1`: guarded fast-forward success, up-to-date no-op, dirty preservation, ahead/diverged rejection, detached/no-upstream rejection, fetch failure, and configured-remote/upstream mismatch.
+- `tests/GWM.Sync.Tests.ps1`: guarded fast-forward success, up-to-date no-op, dirty preservation, ahead/diverged rejection, detached/no-upstream rejection, fetch failure, configured-remote/upstream mismatch, and per-repository failure isolation.
 
-The user confirmed 25/25 tests passing on Windows PowerShell 5.1/Pester 3.4.0 before the executor and its eight new tests were added. The current expected suite size is 33; executor tests have not yet been run in the user's environment. The executor is not wired into the GWM Scan entry point.
+The user confirmed 25/25 tests passing on Windows PowerShell 5.1/Pester 3.4.0 before the executor and its nine new tests were added. The current expected suite size is 34; executor tests have not yet been run in the user's environment. The executor is not wired into the GWM Scan entry point.
 
 ## 4. Safety assertions
 
