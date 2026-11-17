@@ -16,6 +16,22 @@ function Invoke-GwmTestGit {
     return (($output | ForEach-Object { [string]$_ }) -join [Environment]::NewLine).Trim()
 }
 
+
+function Invoke-GwmTestGitResult {
+    param([string]$RepositoryPath, [string[]]$Arguments)
+    $previousPreference = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        $output = @(& git -C $RepositoryPath @Arguments 2>&1)
+        $exitCode = $LASTEXITCODE
+    }
+    finally { $ErrorActionPreference = $previousPreference }
+    [pscustomobject]@{
+        ExitCode = $exitCode
+        Output = (($output | ForEach-Object { [string]$_ }) -join [Environment]::NewLine).Trim()
+    }
+}
+
 function New-GwmIntegrationFixture {
     $fixtureRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('gwm-integration-' + [guid]::NewGuid().ToString('N'))
     $seedPath = Join-Path $fixtureRoot 'seed'
@@ -171,6 +187,37 @@ Describe 'GWM repository state integration' {
         $report.Results[0].Name | Should Be 'local'
         $report.Results[0].Classification | Should Be 'UP_TO_DATE'
         $report.Results[0].Head | Should Match '^[0-9a-f]{40}$'
+    }
+
+
+    It 'detects a working-tree change between two repository inspections' {
+        $before = Get-GwmRepositoryState -Repository $script:GwmFixture.Repository
+        $file = Join-Path $script:GwmFixture.Local 'changed-during-run.txt'
+        Set-Content -LiteralPath $file -Value 'concurrent user content'
+        $after = Get-GwmRepositoryState -Repository $script:GwmFixture.Repository
+
+        (Test-GwmRepositoryStateUnchanged -Before $before -After $after) | Should Be $false
+        (Get-Content -LiteralPath $file -Raw).Trim() | Should Be 'concurrent user content'
+        $after.Head | Should Be $before.Head
+    }
+
+    It 'rejects a diverged update with ff-only and preserves both sides' {
+        Add-GwmTestCommit -RepositoryPath $script:GwmFixture.Local -FileName 'local-only.txt' -Value 'local user commit' -Message 'local-only commit'
+        Add-GwmTestCommit -RepositoryPath $script:GwmFixture.Seed -FileName 'remote-only.txt' -Value 'remote commit' -Message 'remote-only commit'
+        Invoke-GwmTestGit -RepositoryPath $script:GwmFixture.Seed -Arguments @('push', 'origin', $script:GwmFixture.Branch) | Out-Null
+        Invoke-GwmTestGit -RepositoryPath $script:GwmFixture.Local -Arguments @('fetch', 'origin') | Out-Null
+
+        $beforeHead = Invoke-GwmTestGit -RepositoryPath $script:GwmFixture.Local -Arguments @('rev-parse', 'HEAD')
+        $localFile = Join-Path $script:GwmFixture.Local 'local-only.txt'
+        $remoteFile = Join-Path $script:GwmFixture.Local 'remote-only.txt'
+
+        $merge = Invoke-GwmTestGitResult -RepositoryPath $script:GwmFixture.Local -Arguments @('merge', '--ff-only', ('origin/' + $script:GwmFixture.Branch))
+
+        $merge.ExitCode | Should Not Be 0
+        (Invoke-GwmTestGit -RepositoryPath $script:GwmFixture.Local -Arguments @('rev-parse', 'HEAD')) | Should Be $beforeHead
+        (Test-Path -LiteralPath $localFile) | Should Be $true
+        (Get-Content -LiteralPath $localFile -Raw).Trim() | Should Be 'local user commit'
+        (Test-Path -LiteralPath $remoteFile) | Should Be $false
     }
 
     It 'detects a repository without an upstream' {
