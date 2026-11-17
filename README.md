@@ -6,7 +6,7 @@ GWM is designed to reduce repetitive repository maintenance without hiding Git s
 
 ## Status
 
-**Planning / M0 foundation.** This repository currently contains the project specification and engineering policies. The implementation has not started.
+**M1 foundation in progress.** A read-only PowerShell scan foundation, repository inspection module, CMD launcher, and initial Pester tests are available on `feature/m1-foundation`. Runtime verification on Windows PowerShell 5.1 is still required.
 
 ## Goals
 
@@ -39,11 +39,12 @@ No database, background service, or mandatory external module is planned.
 
 ## Quick start (planned)
 
-1. Clone this repository.
+1. Clone this repository and check out `feature/m1-foundation` while M1 is under review.
 2. Copy `config/settings.example.json` to `config/settings.json`.
-3. Copy `config/repositories.example.json` to `config/repositories.json`, or use discovery mode.
-4. Set the workspace root in local settings.
-5. Run `Start-GWM.cmd` or `scripts/GWM.ps1`.
+3. Set `workspace.root` to an existing workspace directory (for example, `E:/Work`).
+4. Leave `config/repositories.json` absent to use discovery mode; create it only when you want an explicit repository list.
+5. Run `Start-GWM.cmd` or `powershell.exe -NoProfile -File .\\scripts\\GWM.ps1`.
+6. Run tests with `Invoke-Pester .\\tests` (Pester 3.4 syntax).
 
 The launcher and runtime scripts will be added in a later implementation milestone.
 
