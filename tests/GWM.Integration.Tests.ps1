@@ -168,22 +168,7 @@ Describe 'GWM repository state integration' {
         @($report.Results).Count | Should Be 1
         $report.Results[0].Name | Should Be 'local'
         $report.Results[0].Classification | Should Be 'UP_TO_DATE'
-        $report.Results[0].Head | Should Match '^[0-9a-f]{40}
-        $orphanPath = Join-Path $script:GwmFixture.Root 'orphan'
-        New-Item -ItemType Directory -Path $orphanPath -Force | Out-Null
-        Invoke-GwmTestGit -RepositoryPath $orphanPath -Arguments @('init') | Out-Null
-        Invoke-GwmTestGit -RepositoryPath $orphanPath -Arguments @('config', 'user.name', 'GWM Integration Test') | Out-Null
-        Invoke-GwmTestGit -RepositoryPath $orphanPath -Arguments @('config', 'user.email', 'gwm-test@example.invalid') | Out-Null
-        Set-Content -LiteralPath (Join-Path $orphanPath 'initial.txt') -Value 'initial'
-        Invoke-GwmTestGit -RepositoryPath $orphanPath -Arguments @('add', 'initial.txt') | Out-Null
-        Invoke-GwmTestGit -RepositoryPath $orphanPath -Arguments @('commit', '-m', 'orphan initial commit') | Out-Null
-        $repository = [pscustomobject]@{ Name='no-upstream'; Path=$orphanPath; Remote='origin' }
-        $state = Get-GwmRepositoryState -Repository $repository
-        $state.Upstream | Should Be $null
-        $state.Classification | Should Be 'NEEDS_ATTENTION'
-    }
-}
-
+        $report.Results[0].Head | Should Match '^[0-9a-f]{40}$'
     }
 
     It 'detects a repository without an upstream' {
