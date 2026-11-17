@@ -6,7 +6,7 @@ GWM reduces repetitive repository maintenance without hiding Git state or taking
 
 ## Status
 
-**M1 foundation in progress.** The local-only Scan command and explicit Sync command are available on feature/m1-foundation. Sync uses the guarded fast-forward executor; it is never the default mode. The user verified 35/35 tests on Windows PowerShell 5.1 with Pester 3.4.0 before command integration. The current 38-test suite still requires local verification.
+**M1 foundation in progress.** The local-only Scan command and explicit Sync command are available on feature/m1-foundation. Sync uses the guarded fast-forward executor; it is never the default mode. The user verified 35/35 tests on Windows PowerShell 5.1 with Pester 3.4.0 before command integration. The current 39-test suite still requires local verification.
 
 ## Goals
 

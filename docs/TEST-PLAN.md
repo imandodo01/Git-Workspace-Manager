@@ -41,12 +41,11 @@ Create a bare remote and local clones in a disposable test root. Simulate:
 ### Current automated coverage
 
 - `tests/GWM.Core.Tests.ps1`: 5 classification unit tests.
-- `tests/GWM.Integration.Tests.ps1`: repository state inspection, JSON report, real working-tree state-change detection, and diverged-history fast-forward rejection.
+- `tests/GWM.Integration.Tests.ps1`: repository state inspection, JSON report, race and diverged-history checks, offline Scan, explicit Sync success, dirty-work preservation, and Sync failure exit handling.
 - `tests/GWM.Safety.Tests.ps1`: URL redaction, sync eligibility, state snapshot comparison, fetch failure isolation, fetch preservation, and credential redaction.
 - `tests/GWM.Sync.Tests.ps1`: guarded fast-forward success, up-to-date no-op, dirty preservation, ahead/diverged rejection, detached/no-upstream rejection, fetch failure, configured-remote/upstream mismatch, and per-repository failure isolation.
-- `tests/GWM.Integration.Tests.ps1`: command-level coverage for offline Scan, explicit Sync fast-forward, JSON sync report, and attention exit code with dirty-work preservation.
 
-The user confirmed 35/35 tests passing on Windows PowerShell 5.1/Pester 3.4.0 before command-mode integration. Three new command integration tests bring the expected suite size to 38; these latest tests have not yet been run.
+The user confirmed 35/35 tests passing on Windows PowerShell 5.1/Pester 3.4.0 before command-mode integration. Four new command integration tests bring the expected suite size to 39; these latest tests have not yet been run.
 
 ## 4. Safety assertions
 

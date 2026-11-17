@@ -44,4 +44,4 @@ Run on Windows PowerShell 5.1 with Pester 3.4.0:
 Invoke-Pester .\tests
 ~~~
 
-The user confirmed 35/35 tests passing on Windows PowerShell 5.1/Pester 3.4.0 before command-mode integration. Three command integration tests bring the expected suite size to 38; they have not yet been run in the user's environment.
+The user confirmed 35/35 tests passing on Windows PowerShell 5.1/Pester 3.4.0 before command-mode integration. Four command integration tests bring the expected suite size to 39; they have not yet been run in the user's environment.

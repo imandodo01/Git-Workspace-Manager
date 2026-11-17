@@ -18,3 +18,4 @@ The format follows Keep a Changelog conventions. Versions will use Semantic Vers
 - Added explicit -Mode Sync command path while keeping Scan as the default local-only, read-only mode.
 - Added separate JSON reports for Scan and Sync, per-repository status output, and Sync exit codes.
 - Added command-level tests for offline Scan, guarded Sync, and dirty-work preservation.
+- Added Sync command failure exit-code coverage for failed fetches.

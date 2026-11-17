@@ -313,4 +313,20 @@ Describe 'GWM repository state integration' {
         $report.Results[0].SyncStatus | Should Be 'NEEDS_ATTENTION'
     }
 
+
+    It 'returns a failure exit code and records a failed fetch without updating the branch' {
+        Set-GwmEntryPointSettings -ProjectRoot $script:GwmFixture.Root -WorkspaceRoot $script:GwmFixture.Local
+        $missingRemote = Join-Path $script:GwmFixture.Root 'missing-remote.git'
+        Invoke-GwmTestGit -RepositoryPath $script:GwmFixture.Local -Arguments @('remote', 'set-url', 'origin', $missingRemote) | Out-Null
+        $beforeHead = Invoke-GwmTestGit -RepositoryPath $script:GwmFixture.Local -Arguments @('rev-parse', 'HEAD')
+
+        $run = Invoke-GwmEntryPoint -ProjectRoot $script:GwmFixture.Root -Mode 'Sync'
+
+        $run.ExitCode | Should Be 2
+        (Invoke-GwmTestGit -RepositoryPath $script:GwmFixture.Local -Arguments @('rev-parse', 'HEAD')) | Should Be $beforeHead
+        $report = Get-Content -LiteralPath (Join-Path $script:GwmFixture.Root 'reports/latest-sync.json') -Raw | ConvertFrom-Json
+        $report.Summary.Failed | Should Be 1
+        $report.Results[0].SyncStatus | Should Be 'FAILED'
+    }
+
 }
