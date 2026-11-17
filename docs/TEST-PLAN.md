@@ -14,13 +14,14 @@ Use Pester for PowerShell unit and integration tests if available and appropriat
 - Branch, upstream, ahead/behind, and detached-HEAD inspection.
 - Secret-bearing remote URL redaction.
 - HTML encoding and JSON serialization.
-- Status classification and recommended actions.
+- Status classification, sync eligibility, and recommended actions.
+- Repository-state snapshot comparison for race detection.
 
 ## 3. Integration scenarios
 
 Create a bare remote and local clones in a disposable test root. Simulate:
 1. Clean and already up to date.
-2. Remote receives one commit; local is fast-forwarded.
+2. Remote receives one commit; local is behind after fetch.
 3. Local-only commit (ahead).
 4. Remote-only commit (behind).
 5. Local and remote commits diverge.
@@ -30,17 +31,20 @@ Create a bare remote and local clones in a disposable test root. Simulate:
 9. Detached HEAD.
 10. Missing upstream.
 11. Fetch failure or unavailable remote.
-12. Fast-forward-only update rejection.
-13. Multiple repositories where one fails but others continue.
-14. Repository state changes during a run.
-15. Paths and branch names containing HTML-sensitive characters.
-16. Remote URLs containing credentials are redacted from all outputs.
+12. Multiple repositories where one fetch fails and another succeeds.
+13. Fetch preserves staged, unstaged, and untracked working-tree contents.
+14. Remote URLs containing credentials are redacted from fetch results.
+15. Fast-forward-only update rejection.
+16. Repository state changes between inspection and update.
+17. Paths and branch names containing HTML-sensitive characters.
 
-### Current automated integration coverage
+### Current automated coverage
 
-`tests/GWM.Integration.Tests.ps1` currently covers clean/up-to-date, staged and unstaged changes, untracked files, local-ahead, remote-behind after fetch, diverged histories, detached HEAD, missing upstream, and JSON scan-report structure. Every test creates its own temporary seed repository, bare remote, and clone, then removes only that test-owned directory. These tests inspect state; they do not execute GWM synchronization.
+- `tests/GWM.Core.Tests.ps1`: 5 classification unit tests.
+- `tests/GWM.Integration.Tests.ps1`: repository state inspection and JSON report integration scenarios.
+- `tests/GWM.Safety.Tests.ps1`: URL redaction, sync eligibility, state snapshot comparison, fetch failure isolation, fetch preservation, and credential redaction.
 
-The remaining scenarios above—especially fetch failures, fast-forward execution/rejection, concurrent state changes, report encoding, and credential redaction—remain future test work and are not claimed as covered by the current integration suite.
+The user previously reported 15/15 tests passing before the safety suite was added. The new safety suite has not yet been run in the user's Windows PowerShell 5.1/Pester 3.4.0 environment. The fetch and safety functions are not wired into the GWM scan entry point, and no working-branch update is implemented.
 
 ## 4. Safety assertions
 
@@ -51,7 +55,17 @@ For dirty and diverged repositories:
 - No stash is created.
 - No branch is reset or force-updated.
 
-For successful fast-forward:
+For fetch:
+- Only the configured remote is fetched.
+- Pruning is disabled.
+- A fetch failure for one repository does not stop independent repositories.
+- Working-tree and index contents remain unchanged.
+- Credential-bearing URL data is not exposed in returned diagnostics.
+
+For future fast-forward execution:
+- Only a clean, attached branch with an unambiguous upstream and a strictly behind-only relationship is eligible.
+- Repository state is rechecked immediately before update.
+- The update uses fast-forward-only semantics.
 - Resulting HEAD equals the fetched upstream commit.
 - No local files are unexpectedly modified.
 - The result is classified UPDATED only after verification.
@@ -67,7 +81,7 @@ For successful fast-forward:
 ## 6. Release gate
 
 Do not call an MVP release-ready until:
-- All automated tests pass.
+- All automated tests pass in the supported PowerShell environment.
 - The safety assertions pass.
 - Configuration examples match implementation.
 - README setup and usage instructions are accurate.
