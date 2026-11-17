@@ -48,8 +48,8 @@ function Get-GwmConfiguration {
 
 function Test-GwmPathWithinRoot {
     param([string]$Path, [string]$Root)
-    $fullPath = [System.IO.Path]::GetFullPath($Path).TrimEnd('\\', '/') + [System.IO.Path]::DirectorySeparatorChar
-    $fullRoot = [System.IO.Path]::GetFullPath($Root).TrimEnd('\\', '/') + [System.IO.Path]::DirectorySeparatorChar
+    $fullPath = [System.IO.Path]::GetFullPath($Path).TrimEnd('\', '/') + [System.IO.Path]::DirectorySeparatorChar
+    $fullRoot = [System.IO.Path]::GetFullPath($Root).TrimEnd('\', '/') + [System.IO.Path]::DirectorySeparatorChar
     $fullPath.StartsWith($fullRoot, [System.StringComparison]::OrdinalIgnoreCase)
 }
 
@@ -246,13 +246,13 @@ function Get-GwmRepositoryState {
     $branch = $branchResult.Output
     $files = @()
     if (-not [string]::IsNullOrWhiteSpace($statusResult.Output)) {
-        $files = @($statusResult.Output -split '\\r?\\n' | Where-Object { $_ })
+        $files = @($statusResult.Output -split '\r?\n' | Where-Object { $_ })
     }
     $ahead = $null
     $behind = $null
     if ($upstreamResult.ExitCode -eq 0) {
         $counts = Invoke-GwmGit -RepositoryPath $Repository.Path -Arguments @('rev-list', '--left-right', '--count', 'HEAD...@{u}')
-        if ($counts.ExitCode -eq 0 -and $counts.Output -match '^\\s*(\\d+)\\s+(\\d+)\\s*$') {
+        if ($counts.ExitCode -eq 0 -and $counts.Output -match '^\s*(\d+)\s+(\d+)\s*$') {
             $ahead = [int]$matches[1]; $behind = [int]$matches[2]
         }
     }
