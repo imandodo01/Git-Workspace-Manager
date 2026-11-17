@@ -48,8 +48,8 @@ function Get-GwmConfiguration {
 
 function Test-GwmPathWithinRoot {
     param([string]$Path, [string]$Root)
-    $fullPath = [System.IO.Path]::GetFullPath($Path).TrimEnd('\', '/') + [System.IO.Path]::DirectorySeparatorChar
-    $fullRoot = [System.IO.Path]::GetFullPath($Root).TrimEnd('\', '/') + [System.IO.Path]::DirectorySeparatorChar
+    $fullPath = [System.IO.Path]::GetFullPath($Path).TrimEnd('\\', '/') + [System.IO.Path]::DirectorySeparatorChar
+    $fullRoot = [System.IO.Path]::GetFullPath($Root).TrimEnd('\\', '/') + [System.IO.Path]::DirectorySeparatorChar
     $fullPath.StartsWith($fullRoot, [System.StringComparison]::OrdinalIgnoreCase)
 }
 
@@ -101,8 +101,7 @@ function Invoke-GwmGit {
     param([string]$RepositoryPath, [string[]]$Arguments)
     # Windows PowerShell 5.1 can promote native stderr to a terminating error
     # when the caller uses ErrorActionPreference=Stop. Git failures must instead
-    # be returned as an exit code so callers can classify expected conditions
-    # such as a branch without an upstream.
+    # be returned as an exit code so callers can classify expected conditions.
     $previousErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
     try {
@@ -113,6 +112,110 @@ function Invoke-GwmGit {
         $ErrorActionPreference = $previousErrorActionPreference
     }
     [pscustomobject]@{ ExitCode=$exitCode; Output=(@($output | ForEach-Object { [string]$_ }) -join [Environment]::NewLine).Trim() }
+}
+
+function ConvertTo-GwmRedactedRemoteUrl {
+    [CmdletBinding()]
+    param([AllowNull()][string]$RemoteUrl)
+    if ([string]::IsNullOrWhiteSpace($RemoteUrl)) { return $RemoteUrl }
+
+    $redacted = [regex]::Replace($RemoteUrl, '(?<=://)[^/@\s]+@', '[REDACTED]@')
+    $redacted = [regex]::Replace(
+        $redacted,
+        '(?i)([?&](?:token|access_token|auth|password|passwd|key|api_key)=)[^&#\s]*',
+        '$1[REDACTED]'
+    )
+    return $redacted
+}
+
+function Get-GwmSyncEligibility {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)]$State)
+
+    if (-not $State.IsRepository) { return [pscustomobject]@{ Eligible=$false; Reason='Not a valid Git working tree.' } }
+    if ($State.Detached -or [string]::IsNullOrWhiteSpace([string]$State.Branch)) { return [pscustomobject]@{ Eligible=$false; Reason='HEAD is detached.' } }
+    if ([string]::IsNullOrWhiteSpace([string]$State.Upstream)) { return [pscustomobject]@{ Eligible=$false; Reason='No unambiguous upstream is configured.' } }
+    if ($State.IsDirty -or @($State.StatusLines).Count -gt 0) { return [pscustomobject]@{ Eligible=$false; Reason='Working tree or index is not clean.' } }
+    if ($null -eq $State.Ahead -or $null -eq $State.Behind) { return [pscustomobject]@{ Eligible=$false; Reason='Upstream divergence is unknown.' } }
+    if ($State.Ahead -gt 0) { return [pscustomobject]@{ Eligible=$false; Reason='Local branch contains commits not present upstream.' } }
+    if ($State.Behind -le 0) { return [pscustomobject]@{ Eligible=$false; Reason='Local branch is not strictly behind upstream.' } }
+    [pscustomobject]@{ Eligible=$true; Reason='Clean attached branch is strictly behind its upstream.' }
+}
+
+function Test-GwmRepositoryStateUnchanged {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]$Before,
+        [Parameter(Mandatory = $true)]$After
+    )
+
+    $beforeStatus = (@($Before.StatusLines) -join "`n")
+    $afterStatus = (@($After.StatusLines) -join "`n")
+    return (
+        [string]$Before.Branch -ceq [string]$After.Branch -and
+        [string]$Before.Head -ceq [string]$After.Head -and
+        [string]$Before.Upstream -ceq [string]$After.Upstream -and
+        $beforeStatus -ceq $afterStatus
+    )
+}
+
+function Invoke-GwmFetch {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)]$Repository)
+
+    $remote = [string]$Repository.Remote
+    if ($remote -notmatch '^[A-Za-z0-9._-]+$') {
+        return [pscustomobject]@{ Success=$false; Remote=$remote; Output='Configured remote name is invalid.'; ExitCode=2 }
+    }
+
+    $urlResult = Invoke-GwmGit -RepositoryPath $Repository.Path -Arguments @('remote', 'get-url', $remote)
+    $remoteUrl = if ($urlResult.ExitCode -eq 0) { $urlResult.Output } else { $null }
+    $fetchResult = Invoke-GwmGit -RepositoryPath $Repository.Path -Arguments @('fetch', '--no-prune', '--no-tags', $remote)
+    $output = ConvertTo-GwmRedactedRemoteUrl -RemoteUrl $fetchResult.Output
+    if ($remoteUrl) {
+        $safeUrl = ConvertTo-GwmRedactedRemoteUrl -RemoteUrl $remoteUrl
+        $output = $output.Replace($remoteUrl, $safeUrl)
+    }
+    [pscustomobject]@{
+        Success=($fetchResult.ExitCode -eq 0)
+        Remote=$remote
+        RemoteUrl=ConvertTo-GwmRedactedRemoteUrl -RemoteUrl $remoteUrl
+        Output=$output
+        ExitCode=$fetchResult.ExitCode
+    }
+}
+
+function Invoke-GwmFetchForRepositories {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][object[]]$Repositories)
+
+    $results = @()
+    foreach ($repository in $Repositories) {
+        try {
+            $fetch = Invoke-GwmFetch -Repository $repository
+            $results += [pscustomobject]@{
+                Name=$repository.Name
+                Path=$repository.Path
+                FetchStatus=if ($fetch.Success) { 'FETCHED' } else { 'FAILED' }
+                Remote=$fetch.Remote
+                RemoteUrl=$fetch.RemoteUrl
+                ExitCode=$fetch.ExitCode
+                Reason=$fetch.Output
+            }
+        }
+        catch {
+            $results += [pscustomobject]@{
+                Name=$repository.Name
+                Path=$repository.Path
+                FetchStatus='FAILED'
+                Remote=[string]$repository.Remote
+                RemoteUrl=$null
+                ExitCode=$null
+                Reason=(ConvertTo-GwmRedactedRemoteUrl -RemoteUrl $_.Exception.Message)
+            }
+        }
+    }
+    return @($results)
 }
 
 function Get-GwmStateClassification {
@@ -143,13 +246,13 @@ function Get-GwmRepositoryState {
     $branch = $branchResult.Output
     $files = @()
     if (-not [string]::IsNullOrWhiteSpace($statusResult.Output)) {
-        $files = @($statusResult.Output -split '\r?\n' | Where-Object { $_ })
+        $files = @($statusResult.Output -split '\\r?\\n' | Where-Object { $_ })
     }
     $ahead = $null
     $behind = $null
     if ($upstreamResult.ExitCode -eq 0) {
         $counts = Invoke-GwmGit -RepositoryPath $Repository.Path -Arguments @('rev-list', '--left-right', '--count', 'HEAD...@{u}')
-        if ($counts.ExitCode -eq 0 -and $counts.Output -match '^\s*(\d+)\s+(\d+)\s*$') {
+        if ($counts.ExitCode -eq 0 -and $counts.Output -match '^\\s*(\\d+)\\s+(\\d+)\\s*$') {
             $ahead = [int]$matches[1]; $behind = [int]$matches[2]
         }
     }
@@ -166,4 +269,4 @@ function Get-GwmRepositoryState {
     }
 }
 
-Export-ModuleMember -Function Get-GwmConfiguration, Find-GwmRepositories, Invoke-GwmGit, Get-GwmRepositoryState, Get-GwmStateClassification
+Export-ModuleMember -Function Get-GwmConfiguration, Find-GwmRepositories, Invoke-GwmGit, Get-GwmRepositoryState, Get-GwmStateClassification, ConvertTo-GwmRedactedRemoteUrl, Get-GwmSyncEligibility, Test-GwmRepositoryStateUnchanged, Invoke-GwmFetch, Invoke-GwmFetchForRepositories
