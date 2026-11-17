@@ -154,6 +154,20 @@ Describe 'GWM guarded fast-forward executor' {
         $result.AfterCommit | Should Be $before
     }
 
+    It 'classifies a branch without upstream before fetching a missing remote' {
+        Invoke-GwmSyncTestGit -RepositoryPath $script:GwmSyncFixture.Local -Arguments @('branch', '--unset-upstream') | Out-Null
+        Invoke-GwmSyncTestGit -RepositoryPath $script:GwmSyncFixture.Local -Arguments @('remote', 'remove', 'origin') | Out-Null
+        $before = Invoke-GwmSyncTestGit -RepositoryPath $script:GwmSyncFixture.Local -Arguments @('rev-parse', 'HEAD')
+
+        $result = Invoke-GwmFastForward -Repository $script:GwmSyncFixture.Repository
+
+        $result.SyncStatus | Should Be 'NEEDS_ATTENTION'
+        $result.Reason | Should Match 'No unambiguous upstream'
+        $result.ExitCode | Should Be 0
+        $result.AfterCommit | Should Be $before
+        (Invoke-GwmSyncTestGit -RepositoryPath $script:GwmSyncFixture.Local -Arguments @('rev-parse', 'HEAD')) | Should Be $before
+    }
+
     It 'reports fetch failure without updating the local branch' {
         Invoke-GwmSyncTestGit -RepositoryPath $script:GwmSyncFixture.Seed -Arguments @('remote', 'set-url', 'origin', (Join-Path $script:GwmSyncFixture.Root 'missing-remote.git')) | Out-Null
         Invoke-GwmSyncTestGit -RepositoryPath $script:GwmSyncFixture.Local -Arguments @('remote', 'set-url', 'origin', (Join-Path $script:GwmSyncFixture.Root 'missing-remote.git')) | Out-Null
