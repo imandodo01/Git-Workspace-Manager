@@ -27,7 +27,10 @@ function Get-GwmConfiguration {
     }
 
     $excluded = @('.git', 'node_modules', 'vendor', '.venv')
-    if ($settings.workspace.excludedDirectories) { $excluded = @($settings.workspace.excludedDirectories) }
+    $excludedProperty = $settings.workspace.PSObject.Properties['excludedDirectories']
+    if ($null -ne $excludedProperty -and $null -ne $excludedProperty.Value) {
+        $excluded = @($excludedProperty.Value)
+    }
     $remote = if ($settings.git.defaultRemote) { [string]$settings.git.defaultRemote } else { 'origin' }
     if ($remote -notmatch '^[A-Za-z0-9._-]+$') { throw 'git.defaultRemote contains unsupported characters.' }
     $strategy = if ($settings.git.syncStrategy) { [string]$settings.git.syncStrategy } else { 'ff-only' }
