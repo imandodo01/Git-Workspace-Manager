@@ -7,7 +7,7 @@ Preserve developer work first. GWM may leave repositories unsynchronized; it mus
 ## 2. Command modes
 
 - Scan is the default and performs local inspection only. It does not fetch or change repositories; divergence is relative to cached upstream tracking refs and may be stale.
-- Sync must be explicitly selected with -Mode Sync. It fetches the configured remote and may fast-forward eligible repositories only.
+- Sync must be explicitly selected with -Mode Sync. It preflights repository validity, branch attachment, and upstream configuration before fetching; detached branches and branches without an upstream are reported as NEEDS_ATTENTION without contacting the configured remote. Remaining repositories fetch the configured remote and may fast-forward only when eligible.
 - Scan writes reports/latest-scan.json. Sync writes reports/latest-sync.json.
 - Sync exits with code 0 when every repository is updated or already current, 1 when at least one needs attention, and 2 when at least one repository fails.
 
@@ -54,7 +54,7 @@ If any condition is false or uncertain, do not update the working branch.
 | Staged or unstaged changes | No update | NEEDS_ATTENTION — local modifications |
 | Untracked files | No update (initial conservative policy) | NEEDS_ATTENTION — untracked files |
 | Detached HEAD | No update | NEEDS_ATTENTION |
-| No upstream configured | No update | NEEDS_ATTENTION |
+| No upstream configured | Do not fetch; no update | NEEDS_ATTENTION |
 | Fetch/auth/network failure | No update | FAILED |
 | Not a valid working tree | No Git operation | FAILED or SKIPPED |
 | Fast-forward-only update rejected | No retry with merge/rebase | FAILED |
@@ -62,6 +62,7 @@ If any condition is false or uncertain, do not update the working branch.
 ## 6. Fetch semantics
 
 - Fetch is allowed even when the working tree is dirty because it updates remote-tracking references, not checked-out files.
+- Detached HEAD and missing-upstream states are preflighted and skipped before fetch; no remote is required to classify these states.
 - Capture local working-tree state before and after fetch.
 - Fetch only the configured remote; do not implicitly fetch every remote.
 - Pruning remote-tracking references is disabled initially to avoid surprising local reference deletion.
