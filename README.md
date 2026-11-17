@@ -2,11 +2,13 @@
 
 A small, portable, Windows-first utility for safely inspecting and synchronizing multiple Git repositories from one configured workspace.
 
-GWM reduces repetitive repository maintenance without hiding Git state or taking control away from the developer. It updates repositories that are safe to fast-forward and produces a readable report for anything requiring human attention.
+GWM reduces repetitive repository maintenance without hiding Git state or taking control away from the developer. It updates repositories that are safe to fast-forward and produces actionable reports for anything requiring human attention.
 
 ## Status
 
-**M1 foundation implementation complete; final verification in progress.** The local-only Scan command and explicit Sync command are available on feature/m1-foundation. Sync uses the guarded fast-forward executor; it is never the default mode. The user verified 39/39 tests on Windows PowerShell 5.1 with Pester 3.4.0. Two additional regression tests cover missing-upstream preflight; the resulting 41-test suite requires local verification before merge.
+**M1 — Foundation is complete and merged to `main`.** The local-only Scan command and explicit Sync command are available. The user confirmed all 41 tests pass on Windows PowerShell 5.1 with Pester 3.4.0. The M1 merge commit is `d47379c7a8b51e8cdb6a76042eb3549864ecb620`.
+
+**M2 — Reporting & Observability is in planning.** HTML reports, historical report retention, and operational log retention are not implemented yet. See the [Product Roadmap](docs/ROADMAP.md) and [M2 Plan](docs/M2-PLAN.md).
 
 ## Goals
 
@@ -16,7 +18,7 @@ GWM reduces repetitive repository maintenance without hiding Git state or taking
 - Keep Scan offline and read-only.
 - Fetch and fast-forward only when explicitly running Sync and all safety checks pass.
 - Skip unsafe or ambiguous states rather than attempting automatic repair.
-- Produce JSON reports and a concise terminal summary.
+- Produce structured JSON reports and a concise terminal summary; HTML and history are planned for M2.
 - Keep configuration, reports, and logs local to the user's machine.
 
 ## Non-goals
@@ -37,23 +39,23 @@ GWM reduces repetitive repository maintenance without hiding Git state or taking
 
 ## Quick start
 
-1. Clone this repository and check out feature/m1-foundation while M1 is under review.
-2. Copy config/settings.example.json to config/settings.json.
-3. Set workspace.root to an existing workspace directory (for example, E:/Work).
-4. Leave config/repositories.json absent to use discovery mode; create it only when you want an explicit repository list.
+1. Clone the repository's `main` branch.
+2. Copy `config/settings.example.json` to `config/settings.json`.
+3. Set `workspace.root` to an existing workspace directory.
+4. Leave `config/repositories.json` absent to use discovery mode; create it only when you want an explicit repository list.
 5. Run a local-only scan:
 
-   ~~~powershell
+   ```powershell
    .\Start-GWM.cmd
-   ~~~
+   ```
 
 6. When ready to update eligible repositories, explicitly run:
 
-   ~~~powershell
+   ```powershell
    .\Start-GWM.cmd -Mode Sync
-   ~~~
+   ```
 
-7. Run tests with Invoke-Pester .\tests (Pester 3.4 syntax).
+7. Run tests with `Invoke-Pester .\tests` (Pester 3.4-compatible syntax).
 
 Scan is the default and does not fetch or change repositories. It compares local branches with the currently cached upstream tracking refs, so its result can be stale until a Sync fetch occurs. Sync fetches the configured remote and fast-forwards only eligible repositories.
 
@@ -64,11 +66,13 @@ Scan is the default and does not fetch or change repositories. It compares local
 - Detached branches and branches without an upstream are classified as needing attention before GWM attempts to fetch the configured remote.
 - Dirty, ahead, diverged, detached, no-upstream, and ambiguous states are not updated.
 - Fast-forward uses the exact fetched target SHA, rechecks state, and verifies the result.
-- A repository failure does not stop independent repositories.
-- Sync writes reports/latest-sync.json; Scan writes reports/latest-scan.json.
+- A repository failure does not stop others.
+- Sync writes `reports/latest-sync.json`; Scan writes `reports/latest-scan.json`.
 - Sync exits with code 0 when all repositories are updated or already current, 1 when at least one needs attention, and 2 when at least one repository fails.
 
 See:
+- [Product roadmap](docs/ROADMAP.md)
+- [M2 plan](docs/M2-PLAN.md)
 - [Specification](docs/SPECIFICATION.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Synchronization policy](docs/SYNC-POLICY.md)

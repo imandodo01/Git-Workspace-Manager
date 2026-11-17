@@ -13,19 +13,19 @@
 
 ## Verification checkpoint
 
-- The user confirmed 39 passed, 0 failed, 0 skipped, 0 pending, 0 inconclusive on Windows PowerShell 5.1 with Pester 3.4.0 after command-mode integration.
-- Four command integration tests cover offline Scan, explicit Sync fast-forward and JSON reporting, attention exit code with dirty-work preservation, and failed-fetch exit handling.
-- Two additional regression tests cover no-upstream preflight when the configured remote is absent, including the CLI exit code and JSON report.
-- The current expected suite size is 41 tests; the two latest regression tests have not yet been run in the user's Windows environment.
-- All integration tests use disposable local repositories and bare remotes; they do not operate on the user's configured workspace.
+- The user confirmed **41 passed, 0 failed** on Windows PowerShell 5.1 with Pester 3.4.0 after the two no-upstream regression tests were added.
+- Command integration tests cover offline Scan, explicit Sync fast-forward and JSON reporting, attention exit code with dirty-work preservation, and failed-fetch exit handling.
+- Regression tests cover no-upstream preflight when the configured remote is absent, including the CLI exit code and JSON report.
+- All integration tests use disposable repositories and bare remotes; they do not operate on the user's configured workspace.
 - The assistant performed static source and test review only; it did not execute Pester or PowerShell in the user's Windows environment.
+- GitHub reported no workflow run or commit status check for the M1 merge commit; local Pester verification is the confirmed evidence.
 
-## Current limitations
+## Current limitations carried into M2
 
-- HTML reporting, log retention, selective repository selection, and VS Code actions are not implemented.
+- HTML reporting, report history/retention, and operational log retention are not implemented.
 - Scan reports divergence against cached upstream tracking refs and may be stale until a Sync fetch occurs.
 - State comparison reduces race risk but cannot lock out concurrent editor or Git activity between the final check and update.
-- Final report/log credential-redaction coverage remains future work.
+- Report/log credential-redaction coverage needs to be extended and tested in M2.
 
 ## Local setup
 

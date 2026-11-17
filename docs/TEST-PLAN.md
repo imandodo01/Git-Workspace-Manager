@@ -38,14 +38,16 @@ Create a bare remote and local clones in a disposable test root. Simulate:
 16. Repository state changes between inspection and update.
 17. Paths and branch names containing HTML-sensitive characters.
 
-### Current automated coverage
+### Current automated coverage — M1
 
-- `tests/GWM.Core.Tests.ps1`: 5 classification unit tests.
+The user confirmed **41 passed, 0 failed** on Windows PowerShell 5.1 with Pester 3.4.0 after the two no-upstream regression tests were added.
+
+- `tests/GWM.Core.Tests.ps1`: classification unit tests.
 - `tests/GWM.Integration.Tests.ps1`: repository state inspection, JSON report, race and diverged-history checks, offline Scan, explicit Sync success, dirty-work preservation, and Sync failure exit handling.
 - `tests/GWM.Safety.Tests.ps1`: URL redaction, sync eligibility, state snapshot comparison, fetch failure isolation, fetch preservation, and credential redaction.
 - `tests/GWM.Sync.Tests.ps1`: guarded fast-forward success, up-to-date no-op, dirty preservation, ahead/diverged rejection, detached/no-upstream preflight (including when the configured remote is absent), fetch failure, configured-remote/upstream mismatch, and per-repository failure isolation.
 
-The user confirmed 39/39 tests passing on Windows PowerShell 5.1/Pester 3.4.0 after command-mode integration. Two additional regression tests cover no-upstream preflight in the executor and CLI exit/report behavior; the expected suite size is now 41, pending local verification.
+The assistant performed static source and test review; it did not execute PowerShell or Pester in the user's Windows environment. GitHub reported no CI workflow run or commit status check for the M1 merge commit.
 
 ## 4. Safety assertions
 
@@ -75,18 +77,33 @@ For the guarded fast-forward executor:
 
 - Start-GWM.cmd defaults to Scan and must not fetch or mutate repositories.
 - Start-GWM.cmd -Mode Sync is the only initial command path that fetches and fast-forwards.
-- Sync writes reports/latest-sync.json; Scan writes reports/latest-scan.json.
-- Sync exit codes: 0 all repositories updated/current, 1 at least one needs attention, 2 at least one failed.
+- Sync writes `reports/latest-sync.json`; Scan writes `reports/latest-scan.json`.
+- Sync exit codes: 0 all repositories updated/current, 1 at least one needs attention, 2 at least one repository fails.
 
-## 6. Manual verification
+## 6. M2 planned verification — Reporting & Observability
+
+These are planned checks, not current implementation coverage:
+
+- Report contract: both modes serialize the same versioned envelope and deterministic summary counts.
+- HTML: Scan and Sync produce self-contained offline reports from the shared report model.
+- HTML safety: hostile repository names, paths, branch names, reasons, and Git output are encoded as text.
+- History: unique filenames under rapid repeated runs; latest outputs remain correct.
+- Retention: only old GWM-generated files under the validated report directory are removed; unrelated sentinel files and files outside the directory remain untouched.
+- Configuration: invalid output directories, negative/invalid retention limits, and malformed settings fail safely with actionable messages.
+- Logging: enabled/disabled behavior, per-run records, bounded retention, and safe error redaction.
+- Failure isolation: report/log write failures are visible and do not hide repository Sync outcomes or produce false success.
+- Compatibility: run the complete suite under Windows PowerShell 5.1 / Pester 3.4.0; test PowerShell 7 where available.
+
+## 7. Manual verification
 
 - Run launcher by double-click.
 - Run entry point from PowerShell 5.1 and PowerShell 7 where available.
-- Open a report in a local browser.
-- Use the VS Code integration with and without the `code` command available.
+- Open generated HTML reports in a local browser with network disconnected.
+- Confirm long repository lists and long error/recommended-action text remain readable.
 - Verify behavior with paths containing spaces and non-ASCII characters.
+- Verify logging disabled and enabled using temporary output directories.
 
-## 7. Release gate
+## 8. Release gate
 
 Do not call an MVP release-ready until:
 - All automated tests pass in the supported PowerShell environment.
