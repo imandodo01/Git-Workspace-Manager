@@ -32,7 +32,7 @@ GWM centralizes the inspection and safe-update workflow while leaving conflict r
 
 Scan mode loads and validates configuration, discovers repositories, inspects local state against cached upstream refs, and writes a JSON report. It does not fetch or change repositories.
 
-Sync mode loads and validates configuration, discovers repositories, captures local state, fetches only the configured remote, rechecks state, fast-forwards eligible repositories, verifies the result, and writes a separate JSON report. Sync is never the default mode.
+Sync mode loads and validates configuration, discovers repositories, and captures local state. Invalid repositories, detached HEAD, and branches without an upstream are classified before any fetch; the latter two require human attention and do not contact the configured remote. For the remaining repositories, Sync fetches only the configured remote, rechecks state, fast-forwards eligible repositories, verifies the result, and writes a separate JSON report. Sync is never the default mode.
 
 ## 6. Functional requirements
 
