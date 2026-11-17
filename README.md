@@ -6,7 +6,7 @@ GWM is designed to reduce repetitive repository maintenance without hiding Git s
 
 ## Status
 
-**M1 foundation in progress.** A read-only PowerShell scan foundation, repository inspection module, CMD launcher, and initial Pester tests are available on `feature/m1-foundation`. Runtime verification on Windows PowerShell 5.1 is still required.
+**M1 foundation in progress.** The read-only PowerShell scan, repository inspection module, CMD launcher, fetch safety primitives, and guarded fast-forward executor are available on `feature/m1-foundation`. The executor is not yet connected to the launcher or Scan command. The user has verified the previous 25-test suite on Windows PowerShell 5.1; the latest 34-test suite still requires local verification.
 
 ## Goals
 
@@ -23,7 +23,7 @@ GWM is designed to reduce repetitive repository maintenance without hiding Git s
 
 - Replacing Git or VS Code.
 - Automatically resolving merge conflicts.
-- Automatically committing, pushing, rebasing, merging, stashing, resetting, cleaning, or deleting user work.
+- Automatically committing, pushing, creating merge commits, resolving conflicts, rebasing, stashing, resetting, cleaning, or deleting user work.
 - Managing credentials or changing Git authentication.
 - Becoming a general development-environment manager.
 - Integrating with DevEnv Manager in the initial scope.
@@ -46,11 +46,9 @@ No database, background service, or mandatory external module is planned.
 5. Run `Start-GWM.cmd` or `powershell.exe -NoProfile -File .\\scripts\\GWM.ps1`.
 6. Run tests with `Invoke-Pester .\\tests` (Pester 3.4 syntax).
 
-The launcher and runtime scripts will be added in a later implementation milestone.
-
 ## Safety model
 
-GWM inspects before it acts. It may fetch remote metadata, but it only performs a pull-equivalent fast-forward when the repository is clean, on a valid local branch with a configured upstream, and the local branch is strictly behind the upstream. Diverged, dirty, detached, untracked-sensitive, or otherwise ambiguous states are reported for manual review. GWM never resets or overwrites local work.
+The Scan command is read-only. A separate guarded fast-forward executor is implemented in the PowerShell module but is not yet exposed through the launcher. It fetches the configured remote, checks that the repository is clean and attached, verifies that the upstream belongs to that remote, pins the fetched target SHA, rechecks state, uses FF-only semantics, and verifies the result. Dirty, ahead, diverged, detached, no-upstream, and ambiguous states are not updated. State rechecks reduce but cannot eliminate races with other processes editing or operating on the same repository.
 
 See:
 - [Specification](docs/SPECIFICATION.md)
