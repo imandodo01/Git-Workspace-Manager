@@ -6,18 +6,17 @@ The format follows Keep a Changelog conventions. Versions will use Semantic Vers
 
 ## [Unreleased]
 
-### Added
-- Initial product specification and acceptance criteria.
-- Initial architecture and synchronization safety policy.
-- Configuration templates and portability guidance.
-- Test plan, security guidance, and agent instructions.
-- Recorded future integration possibility with DevEnv Manager; no current dependency.
+### Planned
+- M2 reporting and observability: shared versioned report contract, self-contained HTML, report history/retention, and safe local run logs.
+- M3 workflow and usability: selective repository operations, clearer setup/configuration validation, and optional VS Code actions.
+- M4 release hardening: PowerShell compatibility, performance, CI, security review, and v1.0 release preparation.
 
-## Unreleased — M1 command integration
+## M1 — Foundation (merged)
 
 - Added explicit -Mode Sync command path while keeping Scan as the default local-only, read-only mode.
 - Added separate JSON reports for Scan and Sync, per-repository status output, and Sync exit codes.
-- Added command-level tests for offline Scan, guarded Sync, and dirty-work preservation.
-- Added Sync command failure exit-code coverage for failed fetches.
+- Added guarded fast-forward execution, exact fetched-target pinning, state rechecks, and post-update verification.
+- Added disposable local Git integration tests and safety regression coverage.
 - Classified detached and no-upstream branches before fetch so missing remotes do not mask the actionable NEEDS_ATTENTION state.
-- Added executor and CLI regression coverage for no-upstream repositories when origin is absent.
+- User confirmed all 41 tests pass on Windows PowerShell 5.1 with Pester 3.4.0.
+- Merged to main in commit d47379c7a8b51e8cdb6a76042eb3549864ecb620.
