@@ -80,7 +80,7 @@ Field names may be adjusted during implementation, but JSON schema changes must 
 
 ## 3. Data flow and safety boundaries
 
-Scan performs local inspection only and never fetches. Sync parses and validates configuration before any network operation, validates repository paths, captures local state, fetches the configured remote, recalculates divergence, and only updates a clean attached branch with a valid upstream and behind-only relationship. The update uses fast-forward-only semantics and final state is verified and recorded.
+Scan performs local inspection only and never fetches. Sync parses and validates configuration before any network operation, validates repository paths, and captures local state. Invalid repositories are failed; detached HEAD and branches without an upstream are classified as needing attention before fetch. Remaining repositories fetch the configured remote, recalculate divergence, and only update a clean attached branch with a valid upstream and behind-only relationship. The update uses fast-forward-only semantics and final state is verified and recorded.
 
 ## 4. Failure isolation
 
