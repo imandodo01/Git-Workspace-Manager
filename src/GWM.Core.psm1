@@ -96,8 +96,19 @@ function Find-GwmRepositories {
 function Invoke-GwmGit {
     [CmdletBinding()]
     param([string]$RepositoryPath, [string[]]$Arguments)
-    $output = @(& git -C $RepositoryPath @Arguments 2>&1)
-    $exitCode = $LASTEXITCODE
+    # Windows PowerShell 5.1 can promote native stderr to a terminating error
+    # when the caller uses ErrorActionPreference=Stop. Git failures must instead
+    # be returned as an exit code so callers can classify expected conditions
+    # such as a branch without an upstream.
+    $previousErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        $output = @(& git -C $RepositoryPath @Arguments 2>&1)
+        $exitCode = $LASTEXITCODE
+    }
+    finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
     [pscustomobject]@{ ExitCode=$exitCode; Output=(@($output | ForEach-Object { [string]$_ }) -join [Environment]::NewLine).Trim() }
 }
 
@@ -144,7 +155,7 @@ function Get-GwmRepositoryState {
         Upstream=if ($upstreamResult.ExitCode -eq 0) { $upstreamResult.Output } else { $null }
         Remote=[string]$Repository.Remote
         Head=if ($headResult.ExitCode -eq 0) { $headResult.Output } else { $null }
-        StatusLines=$files; IsDirty=($files.Count -gt 0); Ahead=$ahead; Behind=$behind
+        StatusLines=@($files); IsDirty=(@($files).Count -gt 0); Ahead=$ahead; Behind=$behind
         Classification=$classification.Status; Reason=$classification.Reason; RecommendedAction=$classification.RecommendedAction
     }
 }
