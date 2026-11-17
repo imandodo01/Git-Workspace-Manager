@@ -1,0 +1,10 @@
+{
+  "repositories": [
+    {
+      "name": "ExampleProject",
+      "path": "ExampleProject",
+      "enabled": true,
+      "remote": "origin"
+    }
+  ]
+}
