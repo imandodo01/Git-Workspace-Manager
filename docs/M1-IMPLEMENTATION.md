@@ -4,14 +4,14 @@
 
 - PowerShell module for local configuration loading, repository discovery, Git invocation, repository inspection, and state classification.
 - PowerShell scan entry point and Windows CMD launcher.
-- Initial Pester unit tests and disposable-local-Git integration tests using syntax compatible with Pester 3.x.
+- Pester unit tests and disposable-local-Git integration tests using syntax compatible with Pester 3.x; the first local verification passed 14/14 tests on Windows PowerShell 5.1 with Pester 3.4.0.
 - Scan writes a local JSON snapshot to reports/latest-scan.json.
 
 ## Current limitations
 
 - M1 scan is read-only. It does not fetch or synchronize repositories.
 - HTML reporting, log retention, selective repository selection, and VS Code actions are not implemented yet.
-- Unit and integration tests have been authored but must be executed on Windows PowerShell 5.1. Results are not considered verified until run locally.
+- The initial 14-test unit/integration suite was verified locally (14 passed, 0 failed). A subsequent JSON report integration test has been added and still requires local execution.
 
 ## Local setup
 
