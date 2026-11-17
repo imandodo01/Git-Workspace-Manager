@@ -43,8 +43,9 @@ Create a bare remote and local clones in a disposable test root. Simulate:
 - `tests/GWM.Core.Tests.ps1`: 5 classification unit tests.
 - `tests/GWM.Integration.Tests.ps1`: repository state inspection, JSON report, real working-tree state-change detection, and diverged-history fast-forward rejection.
 - `tests/GWM.Safety.Tests.ps1`: URL redaction, sync eligibility, state snapshot comparison, fetch failure isolation, fetch preservation, and credential redaction.
+- `tests/GWM.Sync.Tests.ps1`: guarded fast-forward success, up-to-date no-op, dirty preservation, ahead/diverged rejection, detached/no-upstream rejection, fetch failure, and configured-remote/upstream mismatch.
 
-The user reported 23/23 tests passing on Windows PowerShell 5.1/Pester 3.4.0 before the two latest integration tests were added. The latest additions have not yet been run in the user's environment. The fetch and safety functions are not wired into the GWM scan entry point, and no working-branch update is implemented.
+The user confirmed 25/25 tests passing on Windows PowerShell 5.1/Pester 3.4.0 before the executor and its eight new tests were added. The current expected suite size is 33; executor tests have not yet been run in the user's environment. The executor is not wired into the GWM Scan entry point.
 
 ## 4. Safety assertions
 
@@ -62,7 +63,7 @@ For fetch:
 - Working-tree and index contents remain unchanged.
 - Credential-bearing URL data is not exposed in returned diagnostics.
 
-For future fast-forward execution:
+For the guarded fast-forward executor:
 - Only a clean, attached branch with an unambiguous upstream and a strictly behind-only relationship is eligible.
 - Repository state is rechecked immediately before update.
 - The update uses fast-forward-only semantics.
