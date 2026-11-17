@@ -1,0 +1,17 @@
+# Machine-specific configuration
+/config/settings.json
+/config/repositories.json
+
+# Runtime output
+/reports/*
+!/reports/.gitkeep
+/logs/*
+!/logs/.gitkeep
+
+# PowerShell/editor/OS
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
