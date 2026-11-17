@@ -13,9 +13,10 @@
 
 ## Verification checkpoint
 
-- The user confirmed 35 passed, 0 failed, 0 skipped, 0 pending, 0 inconclusive on Windows PowerShell 5.1 with Pester 3.4.0 before command-mode integration.
-- Four additional command integration tests cover offline Scan, explicit Sync fast-forward and JSON reporting, attention exit code with dirty-work preservation, and failed-fetch exit handling.
-- The current expected suite size is 39 tests. The three latest command integration tests have not yet been run in the user's Windows environment.
+- The user confirmed 39 passed, 0 failed, 0 skipped, 0 pending, 0 inconclusive on Windows PowerShell 5.1 with Pester 3.4.0 after command-mode integration.
+- Four command integration tests cover offline Scan, explicit Sync fast-forward and JSON reporting, attention exit code with dirty-work preservation, and failed-fetch exit handling.
+- Two additional regression tests cover no-upstream preflight when the configured remote is absent, including the CLI exit code and JSON report.
+- The current expected suite size is 41 tests; the two latest regression tests have not yet been run in the user's Windows environment.
 - All integration tests use disposable local repositories and bare remotes; they do not operate on the user's configured workspace.
 - The assistant performed static source and test review only; it did not execute Pester or PowerShell in the user's Windows environment.
 
