@@ -6,7 +6,7 @@ GWM is designed to reduce repetitive repository maintenance without hiding Git s
 
 ## Status
 
-**M1 foundation in progress.** The read-only PowerShell scan, repository inspection module, CMD launcher, fetch safety primitives, and guarded fast-forward executor are available on `feature/m1-foundation`. The executor is not yet connected to the launcher or Scan command. The user has verified the previous 25-test suite on Windows PowerShell 5.1; the latest 34-test suite still requires local verification.
+**M1 foundation in progress.** The read-only PowerShell scan, repository inspection module, CMD launcher, fetch safety primitives, and guarded fast-forward executor are available on `feature/m1-foundation`. The executor is not yet connected to the launcher or Scan command. The user has verified the previous 25-test suite on Windows PowerShell 5.1; the latest 35-test suite still requires local verification.
 
 ## Goals
 
