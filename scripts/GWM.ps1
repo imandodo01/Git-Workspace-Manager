@@ -1,11 +1,23 @@
 [CmdletBinding()]
 param(
     [ValidateSet('Scan')][string]$Mode = 'Scan',
-    [string]$ProjectRoot = (Split-Path -Parent $PSScriptRoot)
+    [string]$ProjectRoot
 )
 
 $ErrorActionPreference = 'Stop'
-$modulePath = Join-Path $PSScriptRoot '..\src\GWM.Core.psm1'
+
+# Resolve paths after parameter binding; automatic script variables may be empty
+# while PowerShell evaluates default parameter expressions.
+$scriptPath = $MyInvocation.MyCommand.Path
+if ([string]::IsNullOrWhiteSpace($scriptPath)) {
+    throw 'Unable to determine the script path. Run this file with -File or from its script location.'
+}
+$scriptDirectory = Split-Path -Parent $scriptPath
+if ([string]::IsNullOrWhiteSpace($ProjectRoot)) {
+    $ProjectRoot = Split-Path -Parent $scriptDirectory
+}
+$ProjectRoot = [System.IO.Path]::GetFullPath($ProjectRoot)
+$modulePath = Join-Path $scriptDirectory '..\src\GWM.Core.psm1'
 
 try {
     Import-Module -Name $modulePath -Force -ErrorAction Stop
