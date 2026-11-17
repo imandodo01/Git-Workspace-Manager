@@ -2,7 +2,7 @@
 
 ## Scope
 
-This stage adds reusable safety primitives and a guarded fast-forward executor before connecting synchronization to the user-facing command. The existing Scan entry point remains read-only and does not fetch or update checked-out branches.
+This stage connects the guarded fast-forward executor to an explicit Sync command. Scan remains the default local-only mode and does not fetch or update checked-out branches.
 
 ## Implemented primitives
 
@@ -31,7 +31,7 @@ A failed or ambiguous step stops that repository. There is no fallback to merge 
 
 ## Explicit non-goals
 
-- The Scan entry point is not wired to this executor.
+- The default Scan entry point is not wired to this executor; only explicit -Mode Sync invokes it.
 - No git pull, rebase, reset, stash, checkout, push, or branch rewrite.
 - State comparison reduces race risk but cannot prevent another process or editor from changing files between the final check and Git's update. The FF-only guard and post-update verification remain mandatory.
 - No production-workspace test fixtures.
@@ -44,4 +44,4 @@ Run on Windows PowerShell 5.1 with Pester 3.4.0:
 Invoke-Pester .\tests
 ~~~
 
-The user confirmed 25/25 tests passing before the executor and its ten integration tests were added. The expected suite size is now 35 tests. The executor tests have not yet been run in the user's Windows environment.
+The user confirmed 35/35 tests passing on Windows PowerShell 5.1/Pester 3.4.0 before command-mode integration. Three command integration tests bring the expected suite size to 38; they have not yet been run in the user's environment.

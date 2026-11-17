@@ -76,6 +76,28 @@ function Add-GwmTestCommit {
     Invoke-GwmTestGit -RepositoryPath $RepositoryPath -Arguments @('commit', '-m', $Message) | Out-Null
 }
 
+
+function Set-GwmEntryPointSettings {
+    param([string]$ProjectRoot, [string]$WorkspaceRoot)
+    $configDirectory = Join-Path $ProjectRoot 'config'
+    New-Item -ItemType Directory -Path $configDirectory -Force | Out-Null
+    $settings = @{
+        workspace = @{ root = $WorkspaceRoot; recursiveDiscovery = $false }
+        git = @{ defaultRemote = 'origin'; syncStrategy = 'ff-only' }
+    } | ConvertTo-Json -Depth 5
+    Set-Content -LiteralPath (Join-Path $configDirectory 'settings.json') -Value $settings -Encoding UTF8
+}
+
+function Invoke-GwmEntryPoint {
+    param([string]$ProjectRoot, [string]$Mode)
+    $entryPoint = Join-Path $PSScriptRoot '..\scripts\GWM.ps1'
+    $output = @(& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $entryPoint -ProjectRoot $ProjectRoot -Mode $Mode 2>&1)
+    [pscustomobject]@{
+        ExitCode=$LASTEXITCODE
+        Output=(($output | ForEach-Object { [string]$_ }) -join [Environment]::NewLine)
+    }
+}
+
 Describe 'GWM repository state integration' {
     BeforeEach { $script:GwmFixture = New-GwmIntegrationFixture }
 
@@ -234,4 +256,61 @@ Describe 'GWM repository state integration' {
         $state.Upstream | Should Be $null
         $state.Classification | Should Be 'NEEDS_ATTENTION'
     }
+
+    It 'keeps Scan offline and does not fetch or update the working branch' {
+        Set-GwmEntryPointSettings -ProjectRoot $script:GwmFixture.Root -WorkspaceRoot $script:GwmFixture.Local
+        Add-GwmTestCommit -RepositoryPath $script:GwmFixture.Seed -FileName 'remote-only.txt' -Value 'remote update' -Message 'remote-only update'
+        Invoke-GwmTestGit -RepositoryPath $script:GwmFixture.Seed -Arguments @('push', 'origin', $script:GwmFixture.Branch) | Out-Null
+        $beforeHead = Invoke-GwmTestGit -RepositoryPath $script:GwmFixture.Local -Arguments @('rev-parse', 'HEAD')
+
+        $run = Invoke-GwmEntryPoint -ProjectRoot $script:GwmFixture.Root -Mode 'Scan'
+
+        $run.ExitCode | Should Be 0
+        (Invoke-GwmTestGit -RepositoryPath $script:GwmFixture.Local -Arguments @('rev-parse', 'HEAD')) | Should Be $beforeHead
+        (Test-Path -LiteralPath (Join-Path $script:GwmFixture.Local 'remote-only.txt')) | Should Be $false
+        (Test-Path -LiteralPath (Join-Path $script:GwmFixture.Root 'reports/latest-scan.json')) | Should Be $true
+        (Test-Path -LiteralPath (Join-Path $script:GwmFixture.Root 'reports/latest-sync.json')) | Should Be $false
+    }
+
+    It 'exposes Sync mode and reports a verified fast-forward update' {
+        Set-GwmEntryPointSettings -ProjectRoot $script:GwmFixture.Root -WorkspaceRoot $script:GwmFixture.Local
+        Add-GwmTestCommit -RepositoryPath $script:GwmFixture.Seed -FileName 'remote-update.txt' -Value 'remote update' -Message 'remote update'
+        Invoke-GwmTestGit -RepositoryPath $script:GwmFixture.Seed -Arguments @('push', 'origin', $script:GwmFixture.Branch) | Out-Null
+        $expectedHead = Invoke-GwmTestGit -RepositoryPath $script:GwmFixture.Seed -Arguments @('rev-parse', 'HEAD')
+
+        $run = Invoke-GwmEntryPoint -ProjectRoot $script:GwmFixture.Root -Mode 'Sync'
+
+        $run.ExitCode | Should Be 0
+        (Invoke-GwmTestGit -RepositoryPath $script:GwmFixture.Local -Arguments @('rev-parse', 'HEAD')) | Should Be $expectedHead
+        (Get-Content -LiteralPath (Join-Path $script:GwmFixture.Local 'remote-update.txt') -Raw).Trim() | Should Be 'remote update'
+        $reportPath = Join-Path $script:GwmFixture.Root 'reports/latest-sync.json'
+        (Test-Path -LiteralPath $reportPath -PathType Leaf) | Should Be $true
+        $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
+        $report.Mode | Should Be 'Sync'
+        $report.RepositoryCount | Should Be 1
+        $report.Summary.Updated | Should Be 1
+        $report.Summary.Failed | Should Be 0
+        $report.Results[0].SyncStatus | Should Be 'UPDATED'
+        $report.Results[0].AfterCommit | Should Be $expectedHead
+    }
+
+    It 'returns an attention exit code and preserves dirty work in Sync mode' {
+        Set-GwmEntryPointSettings -ProjectRoot $script:GwmFixture.Root -WorkspaceRoot $script:GwmFixture.Local
+        Add-GwmTestCommit -RepositoryPath $script:GwmFixture.Seed -FileName 'remote-update.txt' -Value 'remote update' -Message 'remote update'
+        Invoke-GwmTestGit -RepositoryPath $script:GwmFixture.Seed -Arguments @('push', 'origin', $script:GwmFixture.Branch) | Out-Null
+        $beforeHead = Invoke-GwmTestGit -RepositoryPath $script:GwmFixture.Local -Arguments @('rev-parse', 'HEAD')
+        $userFile = Join-Path $script:GwmFixture.Local 'keep-me.txt'
+        Set-Content -LiteralPath $userFile -Value 'uncommitted user content'
+
+        $run = Invoke-GwmEntryPoint -ProjectRoot $script:GwmFixture.Root -Mode 'Sync'
+
+        $run.ExitCode | Should Be 1
+        (Invoke-GwmTestGit -RepositoryPath $script:GwmFixture.Local -Arguments @('rev-parse', 'HEAD')) | Should Be $beforeHead
+        (Get-Content -LiteralPath $userFile -Raw).Trim() | Should Be 'uncommitted user content'
+        (Test-Path -LiteralPath (Join-Path $script:GwmFixture.Local 'remote-update.txt')) | Should Be $false
+        $report = Get-Content -LiteralPath (Join-Path $script:GwmFixture.Root 'reports/latest-sync.json') -Raw | ConvertFrom-Json
+        $report.Summary.NeedsAttention | Should Be 1
+        $report.Results[0].SyncStatus | Should Be 'NEEDS_ATTENTION'
+    }
+
 }
