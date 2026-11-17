@@ -12,7 +12,7 @@ GWM centralizes the inspection and safe-update workflow while leaving conflict r
 
 ## 3. Goals
 
-1. One command or double-click starts a workspace synchronization run.
+1. One command or double-click starts a local Scan; synchronization requires an explicit Sync mode.
 2. All repositories in the configured workspace are considered consistently.
 3. Local changes are preserved.
 4. Safe updates use fast-forward-only semantics.
@@ -30,17 +30,9 @@ GWM centralizes the inspection and safe-update workflow while leaving conflict r
 
 ## 5. Core workflow
 
-1. Load and validate local settings and repository registry.
-2. Resolve the configured workspace root.
-3. Discover or load registered repositories.
-4. Validate each repository and identify its current branch and upstream.
-5. Capture pre-fetch working-tree state.
-6. Fetch the configured remote without changing the working tree.
-7. Re-inspect remote tracking state and calculate ahead/behind counts.
-8. Fast-forward only repositories that satisfy every safety precondition.
-9. Verify the resulting state.
-10. Generate terminal summary, HTML report, JSON report, and execution log.
-11. Make repositories requiring attention easy to open in VS Code.
+Scan mode loads and validates configuration, discovers repositories, inspects local state against cached upstream refs, and writes a JSON report. It does not fetch or change repositories.
+
+Sync mode loads and validates configuration, discovers repositories, and captures local state. Invalid repositories, detached HEAD, and branches without an upstream are classified before any fetch; the latter two require human attention and do not contact the configured remote. For the remaining repositories, Sync fetches only the configured remote, rechecks state, fast-forwards eligible repositories, verifies the result, and writes a separate JSON report. Sync is never the default mode.
 
 ## 6. Functional requirements
 
@@ -92,13 +84,11 @@ For each repository, capture as available:
 - Do not automatically open many windows without explicit user choice or configuration.
 
 ### FR-07 Execution modes
-Planned modes:
-- **Sync:** inspect, fetch, and fast-forward eligible repositories.
-- **Scan / dry run:** inspect and fetch if configured, but do not update working branches.
-- **Report:** inspect local state and generate a report without fetching.
-- **Selective:** run against selected registered repositories.
+Initial implemented modes:
+- **Scan (default):** inspect local state against cached upstream refs; no fetch and no working-tree mutation.
+- **Sync (explicit):** fetch the configured remote and fast-forward eligible repositories only.
 
-Exact command-line syntax will be finalized during implementation.
+Report-only and selective modes remain future work. Command-line syntax: -Mode Scan or -Mode Sync.
 
 ## 7. Non-functional requirements
 

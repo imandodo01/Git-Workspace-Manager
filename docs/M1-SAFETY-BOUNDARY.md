@@ -1,0 +1,48 @@
+# M1 Safety Boundary
+
+## Scope
+
+This stage connects the guarded fast-forward executor to an explicit Sync command. Scan remains the default local-only mode and does not fetch or update checked-out branches.
+
+## Implemented primitives
+
+- ConvertTo-GwmRedactedRemoteUrl: redacts URL user-info and sensitive query values.
+- Invoke-GwmFetch: fetches only the configured remote with --no-prune --no-tags; returns a structured result and redacts credential-bearing URL data.
+- Invoke-GwmFetchForRepositories: isolates fetch results per repository so one failure does not stop the remaining repositories.
+- Get-GwmSyncEligibility: allows only valid, attached, clean repositories with a configured upstream, known divergence, zero local-ahead commits, and at least one upstream-only commit.
+- Test-GwmRepositoryStateUnchanged: compares branch, HEAD, upstream, and status lines across two inspections.
+- Invoke-GwmFastForward: preflights repository validity, branch attachment, and upstream configuration; detached or no-upstream states return NEEDS_ATTENTION without fetching. For eligible candidates it fetches the configured remote, rejects changed or ineligible state, verifies that the upstream belongs to the configured remote, pins the fetched target SHA, rechecks repository state and target identity, uses git merge --ff-only against that exact SHA, then verifies HEAD, divergence, and working-tree cleanliness.
+- Invoke-GwmSyncForRepositories: processes repositories independently and records a per-repository failure without stopping subsequent repositories.
+- Integration checks verify that a real working-tree change is detected between inspections and that Git rejects a diverged update under --ff-only without changing HEAD or losing either side's files.
+
+## Execution sequence
+
+1. Capture the repository state and reject invalid working trees.
+2. If HEAD is detached or no upstream is configured, return NEEDS_ATTENTION without fetching.
+3. Fetch only the configured remote without pruning or tags.
+4. Confirm branch, HEAD, upstream, and working-tree status did not change during fetch.
+5. Evaluate strict eligibility; dirty, ahead, and diverged states are not updated.
+6. Confirm the branch upstream belongs to the configured remote.
+7. Resolve and pin the upstream commit SHA; confirm it is a descendant of current HEAD.
+8. Re-inspect state immediately before update and confirm the upstream still resolves to the pinned SHA.
+9. Run git merge --ff-only --no-edit <target-sha>.
+10. Verify HEAD equals the pinned SHA, the branch remains attached, divergence is zero, and the working tree is clean.
+
+A failed or ambiguous step stops that repository. There is no fallback to merge commits, rebase, reset, stash, or force update.
+
+## Explicit non-goals
+
+- The default Scan entry point is not wired to this executor; only explicit -Mode Sync invokes it.
+- No git pull, rebase, reset, stash, checkout, push, or branch rewrite.
+- State comparison reduces race risk but cannot prevent another process or editor from changing files between the final check and Git's update. The FF-only guard and post-update verification remain mandatory.
+- No production-workspace test fixtures.
+
+## Verification
+
+Run on Windows PowerShell 5.1 with Pester 3.4.0:
+
+~~~powershell
+Invoke-Pester .\tests
+~~~
+
+The user confirmed 39/39 tests passing on Windows PowerShell 5.1/Pester 3.4.0 after command-mode integration. Two additional no-upstream preflight regression tests bring the expected suite size to 41; they have not yet been run in the user's environment.

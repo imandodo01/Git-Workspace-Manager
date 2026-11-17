@@ -13,20 +13,20 @@ Launcher (CMD) / PowerShell entry point
                   |
        Repository Discovery/Registry
                   |
-          Git Inspection Layer
-                  |
-         Synchronization Policy
-                  |
-          Fast-forward Executor
-                  |
-       Verification and Result Model
-                  |
-        Reporting / Logging / VS Code
+              Mode Router
+              /       \
+           Scan         Sync
+            |            |
+      Git Inspection  Fetch + Inspection
+            |            |
+       Scan Report   Safety + FF Executor
+                          |
+                  Verification + Report
 ```
 
 ### Entry point
 - `Start-GWM.cmd`: double-click launcher.
-- `scripts/GWM.ps1`: command-line entry point and argument handling.
+- `scripts/GWM.ps1`: command-line entry point and explicit Scan / Sync mode routing. Scan is the default.
 
 ### Configuration
 - Loads local settings and repository registry.
@@ -64,9 +64,9 @@ Each repository produces a structured result with stable fields such as:
 Field names may be adjusted during implementation, but JSON schema changes must be documented.
 
 ### Reporting
-- Terminal output: concise aggregate and per-repository summary.
-- HTML: self-contained report, encoded output, no remote scripts or external assets.
-- JSON: structured run record for history and future tooling.
+- Terminal output: concise per-repository status and Sync aggregate summary.
+- JSON: separate latest-scan.json and latest-sync.json structured run records.
+- HTML remains planned and is not implemented.
 
 ### Logging
 - One run log per execution or a documented rotation strategy.
@@ -80,14 +80,7 @@ Field names may be adjusted during implementation, but JSON schema changes must 
 
 ## 3. Data flow and safety boundaries
 
-1. Configuration is parsed and validated before any fetch.
-2. Repository path is canonicalized and checked against the configured workspace boundary.
-3. Initial local status is captured.
-4. Fetch updates remote-tracking references but does not modify checked-out files.
-5. Local state and divergence are recalculated after fetch.
-6. Only a clean, attached branch with a valid upstream and behind-only relationship is eligible.
-7. The update uses fast-forward-only semantics.
-8. Final status is verified and recorded.
+Scan performs local inspection only and never fetches. Sync parses and validates configuration before any network operation, validates repository paths, and captures local state. Invalid repositories are failed; detached HEAD and branches without an upstream are classified as needing attention before fetch. Remaining repositories fetch the configured remote, recalculate divergence, and only update a clean attached branch with a valid upstream and behind-only relationship. The update uses fast-forward-only semantics and final state is verified and recorded.
 
 ## 4. Failure isolation
 
