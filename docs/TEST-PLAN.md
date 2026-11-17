@@ -45,7 +45,7 @@ Create a bare remote and local clones in a disposable test root. Simulate:
 - `tests/GWM.Safety.Tests.ps1`: URL redaction, sync eligibility, state snapshot comparison, fetch failure isolation, fetch preservation, and credential redaction.
 - `tests/GWM.Sync.Tests.ps1`: guarded fast-forward success, up-to-date no-op, dirty preservation, ahead/diverged rejection, detached/no-upstream rejection, fetch failure, configured-remote/upstream mismatch, and per-repository failure isolation.
 
-The user confirmed 25/25 tests passing on Windows PowerShell 5.1/Pester 3.4.0 before the executor and its ten new tests were added. The current expected suite size is 34; executor tests have not yet been run in the user's environment. The executor is not wired into the GWM Scan entry point.
+The user confirmed 25/25 tests passing on Windows PowerShell 5.1/Pester 3.4.0 before the executor and its ten new tests were added. The current expected suite size is 35; executor tests have not yet been run in the user's environment. The executor is not wired into the GWM Scan entry point.
 
 ## 4. Safety assertions
 
