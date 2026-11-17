@@ -11,6 +11,7 @@ This stage adds reusable safety primitives and tests before implementing working
 - `Invoke-GwmFetchForRepositories`: isolates fetch results per repository so one failure does not stop the remaining repositories.
 - `Get-GwmSyncEligibility`: allows only valid, attached, clean repositories with a configured upstream, known divergence, zero local-ahead commits, and at least one upstream-only commit.
 - `Test-GwmRepositoryStateUnchanged`: compares branch, HEAD, upstream, and status lines across two inspections.
+- Integration checks verify that a real working-tree change is detected between inspections and that Git rejects a diverged update under `--ff-only` without changing HEAD or losing either side's files.
 
 ## Explicit non-goals
 
@@ -27,4 +28,4 @@ Run on Windows PowerShell 5.1 with Pester 3.4.0:
 Invoke-Pester .\tests
 ```
 
-The new safety suite must pass before the next stage. The existing user's 15/15 result predates these tests and must not be reused as evidence for this stage.
+The user reported 23/23 tests passing before the two latest integration tests were added. Run `Invoke-Pester .\tests` again; the expected suite size is now 25 tests. The two latest integration tests are not yet verified in the user's Windows environment.
