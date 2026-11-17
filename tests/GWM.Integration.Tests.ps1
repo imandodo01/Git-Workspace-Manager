@@ -89,6 +89,15 @@ Describe 'GWM repository state integration' {
         (Get-Content -LiteralPath $file -Raw).Trim() | Should Be 'staged user content'
     }
 
+    It 'detects unstaged changes without changing their contents' {
+        $file = Join-Path $script:GwmFixture.Local 'baseline.txt'
+        Set-Content -LiteralPath $file -Value 'unstaged user content'
+        $state = Get-GwmRepositoryState -Repository $script:GwmFixture.Repository
+        $state.Classification | Should Be 'NEEDS_ATTENTION'
+        $state.IsDirty | Should Be $true
+        (Get-Content -LiteralPath $file -Raw).Trim() | Should Be 'unstaged user content'
+    }
+
     It 'detects an untracked file and preserves it' {
         $file = Join-Path $script:GwmFixture.Local 'untracked-user-file.txt'
         Set-Content -LiteralPath $file -Value 'keep me'
