@@ -93,9 +93,15 @@ Describe 'GWM safety boundary primitives' {
     It 'detects changes to branch, HEAD, upstream, or working-tree status' {
         $before = [pscustomobject]@{ Branch='main'; Head='abc'; Upstream='origin/main'; StatusLines=@() }
         $same = [pscustomobject]@{ Branch='main'; Head='abc'; Upstream='origin/main'; StatusLines=@() }
-        $changed = [pscustomobject]@{ Branch='main'; Head='def'; Upstream='origin/main'; StatusLines=@() }
+        $changedHead = [pscustomobject]@{ Branch='main'; Head='def'; Upstream='origin/main'; StatusLines=@() }
+        $changedBranch = [pscustomobject]@{ Branch='release'; Head='abc'; Upstream='origin/main'; StatusLines=@() }
+        $changedUpstream = [pscustomobject]@{ Branch='main'; Head='abc'; Upstream='origin/release'; StatusLines=@() }
+        $changedStatus = [pscustomobject]@{ Branch='main'; Head='abc'; Upstream='origin/main'; StatusLines=@(' M file.txt') }
         (Test-GwmRepositoryStateUnchanged -Before $before -After $same) | Should Be $true
-        (Test-GwmRepositoryStateUnchanged -Before $before -After $changed) | Should Be $false
+        (Test-GwmRepositoryStateUnchanged -Before $before -After $changedHead) | Should Be $false
+        (Test-GwmRepositoryStateUnchanged -Before $before -After $changedBranch) | Should Be $false
+        (Test-GwmRepositoryStateUnchanged -Before $before -After $changedUpstream) | Should Be $false
+        (Test-GwmRepositoryStateUnchanged -Before $before -After $changedStatus) | Should Be $false
     }
 }
 
@@ -121,15 +127,19 @@ Describe 'GWM fetch isolation and preservation' {
 
     It 'does not modify staged, unstaged, or untracked working-tree files during fetch' {
         $modified = Join-Path $script:GwmFetchFixture.Good 'baseline.txt'
+        $staged = Join-Path $script:GwmFetchFixture.Good 'staged.txt'
         $untracked = Join-Path $script:GwmFetchFixture.Good 'keep-me.txt'
         Set-Content -LiteralPath $modified -Value 'local modified content'
+        Set-Content -LiteralPath $staged -Value 'local staged content'
         Set-Content -LiteralPath $untracked -Value 'local untracked content'
+        Invoke-GwmSafetyTestGit -RepositoryPath $script:GwmFetchFixture.Good -Arguments @('add', 'staged.txt') | Out-Null
         $beforeHead = Invoke-GwmSafetyTestGit -RepositoryPath $script:GwmFetchFixture.Good -Arguments @('rev-parse', 'HEAD')
 
         $result = Invoke-GwmFetch -Repository $script:GwmFetchFixture.GoodRepository
 
         $result.Success | Should Be $true
         (Get-Content -LiteralPath $modified -Raw).Trim() | Should Be 'local modified content'
+        (Get-Content -LiteralPath $staged -Raw).Trim() | Should Be 'local staged content'
         (Get-Content -LiteralPath $untracked -Raw).Trim() | Should Be 'local untracked content'
         (Invoke-GwmSafetyTestGit -RepositoryPath $script:GwmFetchFixture.Good -Arguments @('rev-parse', 'HEAD')) | Should Be $beforeHead
     }
