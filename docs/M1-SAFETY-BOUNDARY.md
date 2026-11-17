@@ -12,6 +12,7 @@ This stage adds reusable safety primitives and a guarded fast-forward executor b
 - Get-GwmSyncEligibility: allows only valid, attached, clean repositories with a configured upstream, known divergence, zero local-ahead commits, and at least one upstream-only commit.
 - Test-GwmRepositoryStateUnchanged: compares branch, HEAD, upstream, and status lines across two inspections.
 - Invoke-GwmFastForward: fetches the configured remote, rejects changed or ineligible state, verifies that the upstream belongs to the configured remote, pins the fetched target SHA, rechecks repository state and target identity, uses git merge --ff-only against that exact SHA, then verifies HEAD, divergence, and working-tree cleanliness.
+- Invoke-GwmSyncForRepositories: processes repositories independently and records a per-repository failure without stopping subsequent repositories.
 - Integration checks verify that a real working-tree change is detected between inspections and that Git rejects a diverged update under --ff-only without changing HEAD or losing either side's files.
 
 ## Execution sequence
@@ -43,4 +44,4 @@ Run on Windows PowerShell 5.1 with Pester 3.4.0:
 Invoke-Pester .\tests
 ~~~
 
-The user confirmed 25/25 tests passing before the executor and its eight integration tests were added. The expected suite size is now 33 tests. The executor tests have not yet been run in the user's Windows environment.
+The user confirmed 25/25 tests passing before the executor and its nine integration tests were added. The expected suite size is now 34 tests. The executor tests have not yet been run in the user's Windows environment.
