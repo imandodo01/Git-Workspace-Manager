@@ -6,7 +6,7 @@ GWM reduces repetitive repository maintenance without hiding Git state or taking
 
 ## Status
 
-**M1 foundation in progress.** The local-only Scan command and explicit Sync command are available on feature/m1-foundation. Sync uses the guarded fast-forward executor; it is never the default mode. The user verified 35/35 tests on Windows PowerShell 5.1 with Pester 3.4.0 before command integration. The current 39-test suite still requires local verification.
+**M1 implementation complete; final release verification in progress.** The local-only Scan command and explicit Sync command are available on feature/m1-foundation. Sync uses the guarded fast-forward executor; it is never the default mode. The user verified 39/39 tests on Windows PowerShell 5.1 with Pester 3.4.0. Two additional regression tests cover missing-upstream preflight; the resulting 41-test suite requires local verification before merge.
 
 ## Goals
 
@@ -61,6 +61,7 @@ Scan is the default and does not fetch or change repositories. It compares local
 
 - Scan is offline and read-only.
 - Sync is an explicit opt-in command; there is no automatic or background synchronization.
+- Detached branches and branches without an upstream are classified as needing attention before GWM attempts to fetch the configured remote.
 - Dirty, ahead, diverged, detached, no-upstream, and ambiguous states are not updated.
 - Fast-forward uses the exact fetched target SHA, rechecks state, and verifies the result.
 - A repository failure does not stop independent repositories.
