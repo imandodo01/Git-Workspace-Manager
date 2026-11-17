@@ -159,7 +159,9 @@ Describe 'GWM repository state integration' {
         $output = @(& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $entryPoint -ProjectRoot $script:GwmFixture.Root 2>&1)
         $exitCode = $LASTEXITCODE
 
-        $exitCode | Should Be 0
+        if ($exitCode -ne 0) {
+            throw ("GWM entry point failed with exit code {0}. Child-process output:`n{1}" -f $exitCode, ($output -join [Environment]::NewLine))
+        }
         $reportPath = Join-Path $script:GwmFixture.Root 'reports/latest-scan.json'
         (Test-Path -LiteralPath $reportPath -PathType Leaf) | Should Be $true
         $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
