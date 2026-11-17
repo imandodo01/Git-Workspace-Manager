@@ -1,0 +1,35 @@
+{
+  "workspace": {
+    "root": "C:/Path/To/Your/Workspace",
+    "recursiveDiscovery": true,
+    "excludedDirectories": [
+      ".git",
+      "node_modules",
+      "vendor",
+      ".venv"
+    ]
+  },
+  "git": {
+    "defaultRemote": "origin",
+    "syncStrategy": "ff-only",
+    "fetchPrune": false
+  },
+  "reporting": {
+    "formats": [
+      "html",
+      "json"
+    ],
+    "outputDirectory": "../reports",
+    "keepHistory": true,
+    "maxHistory": 30
+  },
+  "logging": {
+    "enabled": true,
+    "outputDirectory": "../logs",
+    "maxHistory": 30
+  },
+  "integration": {
+    "vscodeEnabled": true,
+    "autoOpenAttentionRepositories": false
+  }
+}
