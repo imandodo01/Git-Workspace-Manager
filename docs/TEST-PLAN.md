@@ -38,7 +38,7 @@ Create a bare remote and local clones in a disposable test root. Simulate:
 
 ### Current automated integration coverage
 
-`tests/GWM.Integration.Tests.ps1` currently covers clean/up-to-date, staged changes, untracked files, local-ahead, remote-behind after fetch, diverged histories, detached HEAD, and missing upstream. Every test creates its own temporary seed repository, bare remote, and clone, then removes only that test-owned directory. These tests inspect state; they do not execute GWM synchronization.
+`tests/GWM.Integration.Tests.ps1` currently covers clean/up-to-date, staged and unstaged changes, untracked files, local-ahead, remote-behind after fetch, diverged histories, detached HEAD, and missing upstream. Every test creates its own temporary seed repository, bare remote, and clone, then removes only that test-owned directory. These tests inspect state; they do not execute GWM synchronization.
 
 The remaining scenarios above—especially fetch failures, fast-forward execution/rejection, concurrent state changes, report encoding, and credential redaction—remain future test work and are not claimed as covered by the current integration suite.
 
