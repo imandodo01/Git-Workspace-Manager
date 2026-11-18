@@ -23,7 +23,7 @@ The initial settings schema is documented by the example file. It covers:
 - VS Code integration.
 - Execution defaults.
 
-All paths must be normalized and validated. Prefer paths relative to the GWM directory only where that behavior is explicit; the workspace root may be absolute. Do not silently guess a workspace location.
+All paths must be normalized and validated. The workspace root may be absolute. Report and log output directories may be absolute or relative; relative output directories resolve against `ProjectRoot` (the GWM application directory), never against the process current working directory. Defaults are `<ProjectRoot>/reports` and `<ProjectRoot>/logs`. Do not silently guess a workspace location.
 
 ## 3. Repository registry
 
