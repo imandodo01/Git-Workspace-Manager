@@ -38,6 +38,7 @@ Describe 'GWM self-contained HTML report renderer' {
             $html | Should Match 'origin/main'
             $html | Should Match 'No action required.'
             $html | Should Match '<style>'
+            $html | Should Match 'Git Workspace Manager &mdash; Scan'
             $html | Should Not Match '<script\b'
             $html | Should Not Match '<link\b'
             $html | Should Not Match '(?i)(src|href)\s*=\s*["'']https?://'

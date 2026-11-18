@@ -115,7 +115,7 @@ function New-GwmHtmlReport {
         [void]$builder.AppendLine('</style>')
         [void]$builder.AppendLine('</head>')
         [void]$builder.AppendLine('<body><main class="container">')
-        [void]$builder.Append('<h1>Git Workspace Manager — ')
+        [void]$builder.Append('<h1>Git Workspace Manager &mdash; ')
         [void]$builder.Append((ConvertTo-GwmHtmlEncodedText -Value $Report.Mode))
         [void]$builder.AppendLine('</h1>')
         [void]$builder.AppendLine('<p class="subtitle">Repository workspace report</p>')
