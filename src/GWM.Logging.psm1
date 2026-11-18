@@ -202,7 +202,7 @@ function Write-GwmRunLog {
         }
 
         $content = if ($lines.Count -gt 0) { [string]::Join([Environment]::NewLine, [string[]]$lines) + [Environment]::NewLine } else { '' }
-        $encoding = New-Object System.Text.UTF8Encoding($false)
+        $encoding = [System.Text.UTF8Encoding]::new($false)
         $bytes = $encoding.GetBytes($content)
         $stream = [System.IO.File]::Open($path, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write, [System.IO.FileShare]::Read)
         try {
