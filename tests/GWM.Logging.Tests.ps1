@@ -105,7 +105,7 @@ Describe 'GWM operational logging' {
         }
     }
 
-    It 'retains only the newest generated logs for the selected mode' {
+    It 'retains only the newest generated logs across Scan and Sync runs' {
         $root = Join-Path ([System.IO.Path]::GetTempPath()) ('gwm-logging-' + [guid]::NewGuid().ToString('N'))
         try {
             [void][System.IO.Directory]::CreateDirectory($root)
@@ -118,11 +118,12 @@ Describe 'GWM operational logging' {
             [System.IO.File]::WriteAllText((Join-Path $root (New-GwmLogFileName -Report $sync)), 'sync')
             [System.IO.File]::WriteAllText((Join-Path $root 'notes.txt'), 'keep')
 
-            $result = Invoke-GwmLogRetention -LogDirectory $root -Mode Scan -RetentionCount 2
+            $result = Invoke-GwmLogRetention -LogDirectory $root -RetentionCount 2
             $result.Success | Should Be $true
             $result.DeletedCount | Should Be 1
-            @(Get-ChildItem -LiteralPath $root -Filter 'gwm-scan-*.log').Count | Should Be 2
+            @(Get-ChildItem -LiteralPath $root -Filter 'gwm-scan-*.log').Count | Should Be 1
             @(Get-ChildItem -LiteralPath $root -Filter 'gwm-sync-*.log').Count | Should Be 1
+            @(Get-ChildItem -LiteralPath $root -Filter 'gwm-*.log').Count | Should Be 2
             (Test-Path -LiteralPath (Join-Path $root 'notes.txt')) | Should Be $true
         }
         finally {
@@ -137,7 +138,7 @@ Describe 'GWM operational logging' {
             $report = New-GwmLoggingFixtureReport
             $name = New-GwmLogFileName -Report $report
             [System.IO.File]::WriteAllText((Join-Path $root $name), 'keep')
-            $result = Invoke-GwmLogRetention -LogDirectory $root -Mode Scan -RetentionCount 0
+            $result = Invoke-GwmLogRetention -LogDirectory $root -RetentionCount 0
             $result.Success | Should Be $true
             $result.DeletedCount | Should Be 0
             (Test-Path -LiteralPath (Join-Path $root $name)) | Should Be $true
