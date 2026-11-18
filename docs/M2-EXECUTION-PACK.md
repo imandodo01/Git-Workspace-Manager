@@ -195,7 +195,12 @@ Implemented on the integration branch:
 - Boolean values must be JSON booleans. Retention must be a non-negative 32-bit integer.
 - Example configuration and `docs/CONFIGURATION.md` now use the validated keys: `reporting.outputDirectory`, `reporting.keepHistory`, `reporting.retentionCount`, `logging.path`, and `logging.retentionCount`.
 - Added `tests/GWM.Configuration.Tests.ps1` for defaults, normalized settings, path boundaries, formats, boolean types, and retention validation.
-- Automated tests have not yet been run for this checkpoint; local Windows PowerShell 5.1 / Pester verification is pending.
+- Local verification completed after repairing a duplicated malformed tail in `src/GWM.Core.psm1` (commit `5e392bb`). The user pulled the branch with `git pull --ff-only`; the working tree was clean and HEAD matched `origin/feature/m2-reporting-observability`.
+- PowerShell parser validation passed (`Parser OK`).
+- Full suite command: `Invoke-Pester .\\tests`; result: **72 passed, 0 failed, 0 skipped, 0 pending, 0 inconclusive** in 64.3 seconds.
+- The supplied verification output did not include the exact PowerShell and Pester versions, so those versions are not recorded for this run.
+
+**M2-E1 status: Implemented / Verified.** Acceptance remains subject to the combined M2 integration and end-to-end checks.
 
 The CLI does not consume these normalized settings yet. E2 owns that integration.
 
@@ -287,9 +292,9 @@ Record:
 - M2-B HTML renderer: implemented and locally verified by the user on Windows PowerShell 5.1 / Pester 3.4.0 (**51 passed, 0 failed, 0 skipped**); visual browser preview confirmed correct title, Unicode, and layout. Offline browser verification remains unrecorded. M2-B follow-up fix committed as `de4e9f7`.
 - M2-C history/retention: implemented and verified by the user on Windows PowerShell 5.1 / Pester 3.4.0 as part of the full suite (**60 passed, 0 failed, 0 skipped, 0 pending, 0 inconclusive**, 62.72 seconds). The module is not wired into the CLI.
 - M2-D operational logging: implemented and verified by the user on the local Windows PowerShell environment. The user ran `Invoke-Pester .\\tests`: **67 passed, 0 failed, 0 skipped, 0 pending, 0 inconclusive** (62.47 seconds). The cross-mode retention test confirms chronological ordering by filename timestamp. The module is not wired into the CLI.
-- M2-E1 configuration/validation: implemented in source, example settings, docs, and new tests; local Pester verification pending. M2-E2 CLI pipeline integration remains not started. The renderer is intentionally not wired into `scripts/GWM.ps1` yet.
+- M2-E1 configuration/validation: implemented and locally verified. The user confirmed a clean fast-forward pull at commit `5e392bb`, PowerShell parser success, and full-suite result **72 passed, 0 failed, 0 skipped, 0 pending, 0 inconclusive** (64.3 seconds). Exact PowerShell/Pester versions were not present in the supplied output. M2-E2 CLI pipeline integration remains not started. The renderer is intentionally not wired into `scripts/GWM.ps1` yet.
 - No M2 implementation has been merged to `main`.
 
 ## Status
 
-M2 implementation is in progress. M2-B automated and visual checks are recorded; offline browser verification remains pending. M2-C is implemented and verified by the user on Windows PowerShell 5.1 / Pester 3.4.0. M2-D is implemented and its full Pester suite passed (67 passed, 0 failed). M2-E1 configuration/validation is implemented but awaits local Pester verification; CLI integration and end-to-end output verification remain.
+M2 implementation is in progress. M2-B automated and visual checks are recorded; offline browser verification remains pending. M2-C is implemented and verified by the user on Windows PowerShell 5.1 / Pester 3.4.0. M2-D is implemented and its full Pester suite passed (67 passed, 0 failed). M2-E1 configuration/validation is implemented and verified by the user: parser passed and the full Pester suite reported 72 passed, 0 failed (64.3 seconds); exact runtime/module versions were not captured in the supplied output. M2-E2 CLI integration and end-to-end output verification remain.
