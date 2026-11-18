@@ -154,6 +154,8 @@ function Write-GwmRunLog {
     $result = [pscustomobject]@{ Success = $true; Enabled = $Enabled; Path = $null; Error = $null; Warnings = @() }
     if (-not $Enabled) { return $result }
 
+    $path = $null
+    $createdLog = $false
     try {
         $directory = Resolve-GwmOutputDirectory -ProjectRoot $ProjectRoot -RelativePath $RelativePath
         if (-not [System.IO.Directory]::Exists($directory)) {
@@ -205,6 +207,7 @@ function Write-GwmRunLog {
         $encoding = [System.Text.UTF8Encoding]::new($false)
         $bytes = $encoding.GetBytes($content)
         $stream = [System.IO.File]::Open($path, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write, [System.IO.FileShare]::Read)
+        $createdLog = $true
         try {
             if ($bytes.Length -gt 0) { $stream.Write($bytes, 0, $bytes.Length) }
         }
@@ -217,6 +220,9 @@ function Write-GwmRunLog {
         }
     }
     catch {
+        if ($createdLog -and $path -and [System.IO.File]::Exists($path)) {
+            try { [System.IO.File]::Delete($path) } catch { }
+        }
         $result.Success = $false
         $result.Error = ConvertTo-GwmSafeLogText -Value $_.Exception.Message
         $result.Warnings += $result.Error
