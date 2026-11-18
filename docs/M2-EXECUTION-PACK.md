@@ -297,7 +297,7 @@ Development was intentionally paused after the M2-E1 verification checkpoint. No
 - Last code repair: `5e392bb5214fcd3b2f8b5a32b74acbae6c30eaa2` — removed the duplicated malformed tail from `src/GWM.Core.psm1`.
 - Latest documentation checkpoint: `6f1e7edb4a88df68e0ec7781444336b1c714c615` — records M2-E1 verification.
 - The user's last reported local Git state, before the documentation checkpoint was committed remotely, was clean and aligned with `5e392bb`.
-- The documentation checkpoint is a subsequent remote commit. Therefore, the user's local branch is expected to be one commit behind until the next session pulls it. This is not an uncommitted-change or data-loss condition.
+- The documentation checkpoint(s) were committed remotely after the user's last reported local status. Therefore, the user's local branch must be fast-forwarded to the current remote head at the next session. Do not assume a specific behind count without checking Git. This is not an uncommitted-change or data-loss condition.
 
 ### Verified evidence
 - User ran `git pull --ff-only origin feature/m2-reporting-observability` and received commit `5e392bb`.
