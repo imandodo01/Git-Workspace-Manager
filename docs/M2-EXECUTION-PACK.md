@@ -168,7 +168,7 @@ Exit check:
 - URL user information and sensitive query values use the Core redaction primitive; common secret assignments and Bearer values are additionally redacted before serialization.
 - Disabled logging returns success without resolving or creating the log directory.
 - Log paths are resolved beneath ProjectRoot through the M2-C output-path helper; existing reparse-point segments are rejected. New files use CreateNew semantics and are never overwritten.
-- `Invoke-GwmLogRetention -LogDirectory [-RetentionCount 30]` applies one retention pool across Scan and Sync log files; 0 disables pruning. Only matching direct-child GWM log files are eligible; unrelated names, directories, and reparse points are preserved.
+- `Invoke-GwmLogRetention -LogDirectory [-RetentionCount 30]` applies one retention pool across Scan and Sync log files, ordered by the timestamp embedded in each filename (not by the mode prefix); 0 disables pruning. Only matching direct-child GWM log files are eligible; unrelated names, directories, and reparse points are preserved.
 - Logging and retention failures are returned as warnings/results; callers must preserve the repository operation result. M2-D does not modify CLI exit codes or Git decisions.
 
 ### M2-E — Security, integration, tests, documentation
