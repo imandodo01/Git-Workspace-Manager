@@ -58,7 +58,75 @@ function Get-GwmConfiguration {
         $excluded = @($excludedProperty.Value)
     }
     $remote = if ($settings.git.defaultRemote) { [string]$settings.git.defaultRemote } else { 'origin' }
-    if ($remote -notmatch '^[A-Za-z0-9._-]+
+    if ($remote -notmatch '^[A-Za-z0-9._-]+$') { throw 'git.defaultRemote contains unsupported characters.' }
+    $strategy = if ($settings.git.syncStrategy) { [string]$settings.git.syncStrategy } else { 'ff-only' }
+    if ($strategy -ne 'ff-only') { throw "Unsupported synchronization strategy: $strategy" }
+
+    $reportingProperty = $settings.PSObject.Properties['reporting']
+    $reporting = if ($null -ne $reportingProperty -and $null -ne $reportingProperty.Value) { $reportingProperty.Value } else { [pscustomobject]@{} }
+    $reportPathProperty = $reporting.PSObject.Properties['outputDirectory']
+    $reportPath = if ($null -ne $reportPathProperty) { [string]$reportPathProperty.Value } else { 'reports' }
+    $reportPath = Get-GwmRelativeOutputPath -Value $reportPath -SettingName 'reporting.outputDirectory' -ProjectRoot $root
+
+    $formatsProperty = $reporting.PSObject.Properties['formats']
+    $formats = if ($null -ne $formatsProperty -and $null -ne $formatsProperty.Value) { @($formatsProperty.Value) } else { @('json', 'html') }
+    if ($formats.Count -eq 0) { throw 'reporting.formats must include json.' }
+    $normalizedFormats = @()
+    foreach ($format in $formats) {
+        if ($format -isnot [string]) { throw 'Every reporting.formats entry must be a string.' }
+        $normalized = $format.Trim().ToLowerInvariant()
+        if ($normalized -notin @('json', 'html')) { throw "Unsupported report format: $format" }
+        if ($normalizedFormats -contains $normalized) { throw "Duplicate report format: $format" }
+        $normalizedFormats += $normalized
+    }
+    if ($normalizedFormats -notcontains 'json') { throw 'reporting.formats must include json; JSON is the canonical report format.' }
+
+    $keepHistoryProperty = $reporting.PSObject.Properties['keepHistory']
+    $keepHistory = if ($null -ne $keepHistoryProperty) { $keepHistoryProperty.Value } else { $true }
+    if ($keepHistory -isnot [bool]) { throw 'reporting.keepHistory must be a JSON boolean.' }
+
+    $reportRetentionProperty = $reporting.PSObject.Properties['retentionCount']
+    $reportRetention = if ($null -ne $reportRetentionProperty) { $reportRetentionProperty.Value } else { 30 }
+    if (($reportRetention -isnot [int] -and $reportRetention -isnot [long]) -or $reportRetention -lt 0 -or $reportRetention -gt 2147483647) {
+        throw 'reporting.retentionCount must be a non-negative 32-bit integer.'
+    }
+
+    $loggingProperty = $settings.PSObject.Properties['logging']
+    $logging = if ($null -ne $loggingProperty -and $null -ne $loggingProperty.Value) { $loggingProperty.Value } else { [pscustomobject]@{} }
+    $logEnabledProperty = $logging.PSObject.Properties['enabled']
+    $logEnabled = if ($null -ne $logEnabledProperty) { $logEnabledProperty.Value } else { $true }
+    if ($logEnabled -isnot [bool]) { throw 'logging.enabled must be a JSON boolean.' }
+
+    $logPathProperty = $logging.PSObject.Properties['path']
+    $logPath = if ($null -ne $logPathProperty) { [string]$logPathProperty.Value } else { 'logs' }
+    $logPath = Get-GwmRelativeOutputPath -Value $logPath -SettingName 'logging.path' -ProjectRoot $root
+
+    $logRetentionProperty = $logging.PSObject.Properties['retentionCount']
+    $logRetention = if ($null -ne $logRetentionProperty) { $logRetentionProperty.Value } else { 30 }
+    if (($logRetention -isnot [int] -and $logRetention -isnot [long]) -or $logRetention -lt 0 -or $logRetention -gt 2147483647) {
+        throw 'logging.retentionCount must be a non-negative 32-bit integer.'
+    }
+
+    [pscustomobject]@{
+        ProjectRoot = $root
+        WorkspaceRoot = $workspaceRoot
+        RecursiveDiscovery = if ($null -ne $settings.workspace.recursiveDiscovery) { [bool]$settings.workspace.recursiveDiscovery } else { $true }
+        ExcludedDirectories = $excluded
+        DefaultRemote = $remote
+        SyncStrategy = $strategy
+        Reporting = [pscustomobject]@{
+            OutputDirectory = $reportPath
+            Formats = @($normalizedFormats)
+            KeepHistory = $keepHistory
+            RetentionCount = [int]$reportRetention
+        }
+        Logging = [pscustomobject]@{
+            Enabled = $logEnabled
+            Path = $logPath
+            RetentionCount = [int]$logRetention
+        }
+    }
+}
 
 function Test-GwmPathWithinRoot {
     param([string]$Path, [string]$Root)
