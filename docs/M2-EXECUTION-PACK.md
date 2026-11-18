@@ -36,7 +36,7 @@ Use a shared top-level object for both modes:
 
 Preserve existing M1 result property names and meanings wherever possible. Do not replace missing/unknown divergence values with zero. Keep mode-specific fields nullable when they do not apply.
 
-Summary keys should remain explicit and stable: `Updated`, `UpToDate`, `NeedsAttention`, and `Failed`. For Scan, map classifications into the equivalent status buckets without inventing an update. Document the exact mapping in code comments and docs.
+Summary keys should remain explicit and stable: `Updated`, `UpToDate`, `NeedsAttention`, and `Failed`. For Scan, map `UP_TO_DATE` to `UpToDate`, `FAILED` to `Failed`, and every other classification (including `NEEDS_ATTENTION`, `AHEAD`, `BEHIND`, `DIVERGED`, `UNKNOWN`, and `INVALID_REPOSITORY`) to `NeedsAttention`; Scan never increments `Updated`. For Sync, map `UPDATED`, `UP_TO_DATE`, and `FAILED` to their matching buckets and all other statuses to `NeedsAttention`. Preserve the original status in each result. Unknown divergence values remain `null`, never coerced to zero.
 
 ### Artifact paths
 
