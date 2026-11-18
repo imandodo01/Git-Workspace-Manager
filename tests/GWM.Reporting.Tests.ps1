@@ -69,6 +69,7 @@ Describe 'GWM self-contained HTML report renderer' {
             $html | Should Match '&lt;script&gt;alert\(&quot;x&quot;\)&lt;/script&gt;'
             $html | Should Match '&lt;img src=x onerror=alert\(1\)&gt;'
             $html | Should Match 'A&amp;B'
+            $html | Should Match '&mdash;'
             $html | Should Match 'first line<br>second line &amp; more'
             $html | Should Match '&lt;warning&gt; &amp; &quot;detail&quot;'
             $html | Should Not Match '<script\b'
