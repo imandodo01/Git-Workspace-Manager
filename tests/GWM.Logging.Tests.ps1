@@ -69,7 +69,7 @@ Describe 'GWM operational logging' {
             Test-Path -LiteralPath $result.Path | Should Be $true
             $raw = [System.IO.File]::ReadAllText($result.Path, [System.Text.Encoding]::UTF8)
             $raw | Should Match 'FetchFailed'
-            $raw | Should Match ([regex]::Escape(('repo-' + [char]0x8CC7 + [char]0x6599 + '-' + [char]::ConvertFromUtf32(0x1F600)))
+            $raw | Should Match ([regex]::Escape(('repo-' + [char]0x8CC7 + [char]0x6599 + '-' + [char]::ConvertFromUtf32(0x1F600))))
             $raw | Should Match '\[REDACTED\]'
             $raw | Should Not Match 'super-secret|abc123|hunter2|eyJhbGci|must-not-appear|credential.helper'
             $lines = @($raw.Trim() -split [regex]::Escape([Environment]::NewLine))
