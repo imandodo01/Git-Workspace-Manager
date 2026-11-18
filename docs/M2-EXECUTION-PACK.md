@@ -363,3 +363,53 @@ The user completed the documented resume/synchronization procedure after the pri
 
 ### Remaining-effort planning estimate
 A provisional estimate for the remaining M2 work is **8–14 focused engineering hours**, likely **3–5 work sessions** depending on session length. This is a planning estimate, not measured actual effort. It covers M2-E2 CLI integration, M2-E3 exit-code and disposable-repository integration tests, M2-E4 documentation/security/regression, offline HTML verification, and final combined checks. Re-estimate if integration reveals material defects or contract changes.
+## Chat continuity checkpoint — 2026-11-19
+
+This section is the durable recovery point if the current ChatGPT conversation becomes unavailable or reaches its context limit. Treat the repository state and evidence below as authoritative; do not rely on reconstructing decisions from chat history.
+
+### Project identity and scope
+- Project: Git Workspace Manager (GWM), repository `imandodo01/Git-Workspace-Manager`.
+- GWM remains a focused, independent Windows-first PowerShell + Git CLI utility. Do not couple it to DevEnv Manager in the current scope.
+- Preserve the M1 safety contract: Scan is offline/read-only; Sync is explicit and fast-forward-only; dirty or ambiguous repositories are not modified; never reset, clean, stash, rebase, force-push, or automatically resolve conflicts.
+- Tests must use disposable Git repositories and temporary directories, never the user's real workspace.
+
+### Current authoritative repository state
+- Branch: `feature/m2-reporting-observability`.
+- Latest user-confirmed local HEAD at synchronization: `18bcc714e62dc46e8b778f4f9b9f53ac999bc9e6` (`docs(m2): clarify remote handoff sync state`).
+- The user reported a clean working tree after pulling from `5e392bb` to `18bcc71`.
+- A subsequent documentation-only remote commit was created: `c34b6e286f7c9d3e01f355a0d8b9d309084bac1c` (`docs(m2): record synchronized workspace checkpoint`).
+- Therefore, the user's local branch is expected to be one documentation commit behind the remote after that last reported pull. At the next session, inspect status and fast-forward; do not assume the current local/remote relationship without checking.
+- No M2 implementation has been merged to `main`; no release or CI success is claimed.
+
+### M2 progress and evidence
+- M1 Foundation: complete; 41 tests were previously confirmed by the user.
+- M2-A Shared Report Contract: verified; full suite previously reported 45 passed.
+- M2-B HTML Renderer: implemented; full suite previously reported 51 passed and visual browser preview reviewed. Offline browser verification remains pending.
+- M2-C History & Retention: verified; full suite previously reported 60 passed.
+- M2-D Privacy-safe Logging: verified; full suite previously reported 67 passed.
+- M2-E1 Configuration & Validation: implemented and verified; PowerShell parser reported `Parser OK`; full suite reported 72 passed, 0 failed, 0 skipped, 0 pending, 0 inconclusive in 64.3 seconds. Exact PowerShell/Pester versions were not included in that run's supplied output.
+- M2-E2 CLI Integration: not started.
+- M2-E3 Exit-code handling and disposable-repository integration tests: not started.
+- M2-E4 Documentation, security, and regression closure: not started.
+- M2 remains in progress. Do not describe it as accepted or complete until integrated end-to-end checks and remaining manual verification are recorded.
+
+### Remaining work and estimate
+- Before E2 implementation, inspect `scripts/GWM.ps1`, relevant tests, current project docs, and current Git state; settle and document exit-code precedence for repository failures versus artifact-output failures.
+- Integrate M2-A through M2-D into the CLI without duplicating report normalization or Git decision logic.
+- Add Scan/Sync integration tests using disposable local Git repos and temporary ProjectRoot paths, including output-write failure cases.
+- Complete M2-B offline HTML browser check, history/log retention sentinel checks, combined regression, security/diff review, and documentation updates.
+- Provisional remaining M2 effort: 8–14 focused engineering hours, roughly 3–5 sessions depending on session length. This is a planning estimate, not measured actual effort; revise if integration reveals defects or contract changes.
+- M3 Workflow & Usability and M4 Release & Hardening have not started. Their scope and total effort have not yet been estimated; do not extrapolate the M2 estimate to a v1.0 date.
+
+### Next-session resume checklist
+1. Run `git status --short --branch`.
+2. Run `git pull --ff-only origin feature/m2-reporting-observability` only if the tree is clean and fast-forward is possible.
+3. Recheck status and `git log -1 --oneline`.
+4. Read the current project `AGENTS.md`, relevant project docs, and current AI Engineering Standard policies.
+5. Inspect the current CLI, tests, and diff before planning E2; do not assume prior chat messages override the repository.
+6. Agree/document exit-code precedence, then implement one coherent slice and verify it on the supported Windows PowerShell environment.
+
+### Evidence discipline
+- The test counts above are user-reported results from prior sessions; they are historical evidence, not tests rerun during this documentation update.
+- No assistant-side PowerShell/Pester execution is claimed.
+- No CI run, offline browser verification, or final M2 acceptance is claimed unless separately recorded with evidence.
