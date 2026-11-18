@@ -96,7 +96,136 @@ function Invoke-GwmLogRetention {
             throw 'Log directory must be a real directory, not a reparse point.'
         }
 
-        $pattern = '^gwm-' + $Mode.ToLowerInvariant() + '-\d{8}T\d{9}-[0-9a-f]{32}\.log$'
+        $pattern = '^gwm-(scan|sync)-\d{8}T\d{9}-[0-9a-f]{32}\.log
+        $eligible = @()
+        foreach ($item in @(Get-ChildItem -LiteralPath $root -Force -ErrorAction Stop)) {
+            if ($item.PSIsContainer -or (($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0)) {
+                $result.PreservedCount++
+                continue
+            }
+            $parent = [System.IO.Path]::GetFullPath($item.DirectoryName).TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
+            if (-not $parent.Equals($root, [System.StringComparison]::OrdinalIgnoreCase) -or $item.Name -cnotmatch $pattern) {
+                $result.PreservedCount++
+                continue
+            }
+            $eligible += $item
+        }
+
+        $ordered = @($eligible | Sort-Object Name -Descending)
+        if ($ordered.Count -gt $RetentionCount) {
+            foreach ($item in @($ordered | Select-Object -Skip $RetentionCount)) {
+                try {
+                    $candidate = [System.IO.Path]::GetFullPath($item.FullName)
+                    $parent = [System.IO.Path]::GetDirectoryName($candidate).TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
+                    if (-not $parent.Equals($root, [System.StringComparison]::OrdinalIgnoreCase) -or [System.IO.Path]::GetFileName($candidate) -cnotmatch $pattern) {
+                        throw 'Retention candidate failed final ownership/path validation.'
+                    }
+                    $current = Get-Item -LiteralPath $candidate -Force -ErrorAction Stop
+                    if (($current.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0 -or $current.PSIsContainer) {
+                        throw 'Retention candidate is no longer a regular file.'
+                    }
+                    [System.IO.File]::Delete($candidate)
+                    $result.DeletedCount++
+                }
+                catch {
+                    $result.Warnings += ("Could not prune '{0}': {1}" -f $item.Name, (ConvertTo-GwmSafeLogText -Value $_.Exception.Message))
+                }
+            }
+        }
+    }
+    catch {
+        $result.Success = $false
+        $result.Warnings += (ConvertTo-GwmSafeLogText -Value $_.Exception.Message)
+    }
+    return $result
+}
+
+function Write-GwmRunLog {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][string]$ProjectRoot,
+        [Parameter(Mandatory = $true)]$Report,
+        [AllowEmptyCollection()][object[]]$Events = @(),
+        [bool]$Enabled = $true,
+        [string]$RelativePath = 'logs',
+        [ValidateRange(0, 2147483647)][int]$RetentionCount = 30
+    )
+
+    $result = [pscustomobject]@{ Success = $true; Enabled = $Enabled; Path = $null; Error = $null; Warnings = @() }
+    if (-not $Enabled) { return $result }
+
+    try {
+        $directory = Resolve-GwmOutputDirectory -ProjectRoot $ProjectRoot -RelativePath $RelativePath
+        if (-not [System.IO.Directory]::Exists($directory)) {
+            [void][System.IO.Directory]::CreateDirectory($directory)
+        }
+        $directoryItem = Get-Item -LiteralPath $directory -Force -ErrorAction Stop
+        if (($directoryItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+            throw 'Log directory cannot be a symbolic link or junction.'
+        }
+
+        $fileName = New-GwmLogFileName -Report $Report
+        $path = Join-Path $directory $fileName
+        if ([System.IO.File]::Exists($path) -or [System.IO.Directory]::Exists($path)) {
+            throw 'Log file already exists; refusing to overwrite it.'
+        }
+
+        $lines = @()
+        foreach ($event in @($Events)) {
+            $eventName = [string]$event.Event
+            if ([string]::IsNullOrWhiteSpace($eventName)) { $eventName = 'Event' }
+            $timestamp = [string]$event.Timestamp
+            if ([string]::IsNullOrWhiteSpace($timestamp)) { $timestamp = [DateTimeOffset]::Now.ToString('o') }
+            $entry = [ordered]@{
+                Timestamp = $timestamp
+                RunId = [string]$Report.RunId
+                Mode = [string]$Report.Mode
+                Event = ConvertTo-GwmSafeLogText -Value $eventName
+            }
+            if ($null -ne $event.PSObject.Properties['Repository']) {
+                $entry.Repository = ConvertTo-GwmSafeLogText -Value ([string]$event.Repository)
+            }
+            if ($null -ne $event.PSObject.Properties['Error']) {
+                $entry.Error = ConvertTo-GwmSafeLogText -Value ([string]$event.Error)
+            }
+            if ($null -ne $event.PSObject.Properties['Counts']) {
+                $counts = [ordered]@{}
+                foreach ($key in @('Updated', 'UpToDate', 'NeedsAttention', 'Failed')) {
+                    $property = $event.Counts.PSObject.Properties[$key]
+                    if ($null -ne $property -and $property.Value -is [ValueType]) {
+                        $counts[$key] = $property.Value
+                    }
+                }
+                $entry.Counts = [pscustomobject]$counts
+            }
+            $lines += (ConvertTo-Json -InputObject ([pscustomobject]$entry) -Depth 5 -Compress)
+        }
+
+        $content = if ($lines.Count -gt 0) { [string]::Join([Environment]::NewLine, [string[]]$lines) + [Environment]::NewLine } else { '' }
+        $encoding = New-Object System.Text.UTF8Encoding($false)
+        $bytes = $encoding.GetBytes($content)
+        $stream = [System.IO.File]::Open($path, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write, [System.IO.FileShare]::Read)
+        try {
+            if ($bytes.Length -gt 0) { $stream.Write($bytes, 0, $bytes.Length) }
+        }
+        finally { $stream.Dispose() }
+        $result.Path = $path
+
+        $retention = Invoke-GwmLogRetention -LogDirectory $directory -RetentionCount $RetentionCount
+        if (-not $retention.Success -or $retention.Warnings.Count -gt 0) {
+            $result.Warnings += @($retention.Warnings)
+        }
+    }
+    catch {
+        $result.Success = $false
+        $result.Error = ConvertTo-GwmSafeLogText -Value $_.Exception.Message
+        $result.Warnings += $result.Error
+    }
+    return $result
+}
+
+Export-ModuleMember -Function Get-GwmLoggingOptions, ConvertTo-GwmSafeLogText, New-GwmLogFileName, Invoke-GwmLogRetention, Write-GwmRunLog
+
         $eligible = @()
         foreach ($item in @(Get-ChildItem -LiteralPath $root -Force -ErrorAction Stop)) {
             if ($item.PSIsContainer -or (($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0)) {
