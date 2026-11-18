@@ -6,6 +6,9 @@ The format follows Keep a Changelog conventions. Versions will use Semantic Vers
 
 ## [Unreleased]
 
+### Added
+- Added a shared versioned Scan/Sync report envelope and a standalone HTML renderer module. HTML output is not yet wired into the CLI; M2-B verification is pending.
+
 ### Planned
 - M2 reporting and observability: shared versioned report contract, self-contained HTML, report history/retention, and safe local run logs.
 - M3 workflow and usability: selective repository operations, clearer setup/configuration validation, and optional VS Code actions.
