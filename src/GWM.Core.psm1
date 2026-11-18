@@ -512,7 +512,7 @@ Export-ModuleMember -Function Get-GwmConfiguration, Find-GwmRepositories, Invoke
 
     $reportRetentionProperty = $reporting.PSObject.Properties['retentionCount']
     $reportRetention = if ($null -ne $reportRetentionProperty) { $reportRetentionProperty.Value } else { 30 }
-    if ($reportRetention -isnot [int] -or $reportRetention -lt 0) { throw 'reporting.retentionCount must be a non-negative integer.' }
+    if (($reportRetention -isnot [int] -and $reportRetention -isnot [long]) -or $reportRetention -lt 0 -or $reportRetention -gt 2147483647) { throw 'reporting.retentionCount must be a non-negative 32-bit integer.' }
 
     $loggingSettings = $settings.PSObject.Properties['logging']
     $logging = if ($null -ne $loggingSettings -and $null -ne $loggingSettings.Value) { $loggingSettings.Value } else { [pscustomobject]@{} }
@@ -526,7 +526,7 @@ Export-ModuleMember -Function Get-GwmConfiguration, Find-GwmRepositories, Invoke
 
     $logRetentionProperty = $logging.PSObject.Properties['retentionCount']
     $logRetention = if ($null -ne $logRetentionProperty) { $logRetentionProperty.Value } else { 30 }
-    if ($logRetention -isnot [int] -or $logRetention -lt 0) { throw 'logging.retentionCount must be a non-negative integer.' }
+    if (($logRetention -isnot [int] -and $logRetention -isnot [long]) -or $logRetention -lt 0 -or $logRetention -gt 2147483647) { throw 'logging.retentionCount must be a non-negative 32-bit integer.' }
 
     [pscustomobject]@{
         ProjectRoot = $root
