@@ -272,10 +272,10 @@ Record:
 - M2-A report contract: implemented on `feature/m2-reporting-observability`; the user ran `Invoke-Pester .\tests` on Windows PowerShell 5.1 / Pester 3.4.0 and confirmed **45 passed, 0 failed, 0 skipped** (64.4 seconds).
 - M2-B HTML renderer: implemented and locally verified by the user on Windows PowerShell 5.1 / Pester 3.4.0 (**51 passed, 0 failed, 0 skipped**); visual browser preview confirmed correct title, Unicode, and layout. Offline browser verification remains unrecorded. M2-B follow-up fix committed as `de4e9f7`.
 - M2-C history/retention: implemented and verified by the user on Windows PowerShell 5.1 / Pester 3.4.0 as part of the full suite (**60 passed, 0 failed, 0 skipped, 0 pending, 0 inconclusive**, 62.72 seconds). The module is not wired into the CLI.
-- M2-D operational logging: module and tests authored on `feature/m2-reporting-observability`; local PowerShell/Pester execution is pending. The module is not wired into the CLI.
+- M2-D operational logging: implemented and verified by the user on the local Windows PowerShell environment. The user ran `Invoke-Pester .\\tests`: **67 passed, 0 failed, 0 skipped, 0 pending, 0 inconclusive** (62.47 seconds). The cross-mode retention test confirms chronological ordering by filename timestamp. The module is not wired into the CLI.
 - M2-E CLI/configuration integration: not started. The renderer is intentionally not wired into `scripts/GWM.ps1` yet.
 - No M2 implementation has been merged to `main`.
 
 ## Status
 
-M2 implementation is in progress. M2-B automated and visual checks are recorded; offline browser verification remains pending. M2-C is implemented and verified by the user on Windows PowerShell 5.1 / Pester 3.4.0. M2-D is implemented but not yet verified; do not mark it complete until its Pester tests and safety checks have been run and recorded.
+M2 implementation is in progress. M2-B automated and visual checks are recorded; offline browser verification remains pending. M2-C is implemented and verified by the user on Windows PowerShell 5.1 / Pester 3.4.0. M2-D is implemented and its full Pester suite passed (67 passed, 0 failed). CLI integration and end-to-end output verification remain for M2-E.
