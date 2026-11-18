@@ -20,6 +20,21 @@ function Resolve-GwmOutputDirectory {
         throw 'Output directory must remain beneath ProjectRoot.'
     }
 
+    # Reject existing reparse-point segments so a lexically safe path cannot
+    # escape ProjectRoot through a directory symlink or junction.
+    $current = $candidate
+    while ($current.StartsWith($rootPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+        if (Test-Path -LiteralPath $current) {
+            $item = Get-Item -LiteralPath $current -Force -ErrorAction Stop
+            if (($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+                throw 'Output directory cannot contain a symbolic link or junction.'
+            }
+        }
+        $parent = [System.IO.Path]::GetDirectoryName($current)
+        if ([string]::IsNullOrEmpty($parent) -or $parent.Equals($root, [System.StringComparison]::OrdinalIgnoreCase)) { break }
+        $current = $parent
+    }
+
     return $candidate
 }
 
@@ -61,7 +76,7 @@ function Write-GwmAtomicFile {
     }
 
     $temporaryPath = Join-Path $directory ('.gwm-tmp-' + [guid]::NewGuid().ToString('N'))
-    $encoding = New-Object System.Text.UTF8Encoding($false)
+    $encoding = [System.Text.UTF8Encoding]::new($false)
     try {
         [System.IO.File]::WriteAllText($temporaryPath, $Content, $encoding)
         if ([System.IO.File]::Exists($fullPath)) {
