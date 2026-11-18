@@ -11,9 +11,9 @@ M2 is a reporting and operational visibility milestone. It is not a GUI mileston
 - M1 is merged to `main` at `d47379c7a8b51e8cdb6a76042eb3549864ecb620`.
 - The user confirmed all 41 Pester tests pass on Windows PowerShell 5.1 with Pester 3.4.0.
 - Scan and Sync currently write separate latest JSON snapshots under `reports/`.
-- The current entry point constructs Scan and Sync report objects separately and writes JSON directly.
+- At the M2 planning baseline, the entry point constructed Scan and Sync report objects separately and wrote JSON directly. M2-A has since introduced a shared versioned report envelope and updated the entry point to use it.
 - The example settings already contain reporting and logging options, but the current configuration loader and entry point do not yet implement those options.
-- HTML reporting, historical report retention, and operational log retention are not implemented.
+- The standalone HTML renderer module and its tests have been added on the M2 implementation branch; tests and browser/offline inspection are pending. Historical report retention and operational log retention are not implemented.
 - GitHub reports no CI workflow run or status check for the M1 merge commit. Local Pester confirmation is the available test evidence.
 
 ## In scope
