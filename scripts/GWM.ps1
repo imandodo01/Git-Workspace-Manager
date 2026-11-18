@@ -21,6 +21,7 @@ $modulePath = Join-Path $scriptDirectory '..\src\GWM.Core.psm1'
 $exitCode = 0
 
 try {
+    $runStartedAt = [DateTimeOffset]::Now
     Import-Module -Name $modulePath -Force -ErrorAction Stop
     $configuration = Get-GwmConfiguration -ProjectRoot $ProjectRoot
     $repositories = @(Find-GwmRepositories -Configuration $configuration)
@@ -51,12 +52,7 @@ try {
             }
         }
 
-        $summary = [pscustomobject]@{
-            GeneratedAt=(Get-Date).ToString('o')
-            WorkspaceRoot=$configuration.WorkspaceRoot
-            RepositoryCount=$results.Count
-            Results=$results
-        }
+        $summary = New-GwmRunReport -Mode 'Scan' -WorkspaceRoot $configuration.WorkspaceRoot -Results $results -StartedAt $runStartedAt -FinishedAt ([DateTimeOffset]::Now)
     }
     else {
         $results = @(Invoke-GwmSyncForRepositories -Repositories $repositories)
@@ -73,19 +69,7 @@ try {
         $attentionCount = @($results | Where-Object { $_.SyncStatus -eq 'NEEDS_ATTENTION' }).Count
         $failedCount = @($results | Where-Object { $_.SyncStatus -eq 'FAILED' }).Count
 
-        $summary = [pscustomobject]@{
-            Mode='Sync'
-            GeneratedAt=(Get-Date).ToString('o')
-            WorkspaceRoot=$configuration.WorkspaceRoot
-            RepositoryCount=$results.Count
-            Summary=[pscustomobject]@{
-                Updated=$updatedCount
-                UpToDate=$upToDateCount
-                NeedsAttention=$attentionCount
-                Failed=$failedCount
-            }
-            Results=$results
-        }
+        $summary = New-GwmRunReport -Mode 'Sync' -WorkspaceRoot $configuration.WorkspaceRoot -Results $results -StartedAt $runStartedAt -FinishedAt ([DateTimeOffset]::Now)
         $reportName = 'latest-sync.json'
 
         if ($failedCount -gt 0) {
