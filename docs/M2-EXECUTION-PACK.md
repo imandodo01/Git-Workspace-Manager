@@ -131,6 +131,15 @@ Deliverables:
 Exit check:
 - Only eligible old generated artifacts are pruned; unrelated files survive.
 
+M2-C implementation contract:
+- `Resolve-GwmOutputDirectory -ProjectRoot <path> [-RelativePath reports]` returns a canonical path beneath ProjectRoot and rejects rooted, traversing, and existing reparse-point segments.
+- `New-GwmHistoryFileName -Report <envelope> -Format json|html` validates Mode, a 32-hex RunId, and GeneratedAt, then returns the agreed GWM history filename.
+- `Write-GwmHistoryArtifact -HistoryDirectory <path> -Report <envelope> -Format json|html -Content <serialized output>` writes one immutable artifact and refuses filename collisions. The caller supplies serialized JSON/HTML so M2-E can derive both outputs from the same report envelope.
+- `Write-GwmLatestArtifact -Path <path> -Content <serialized output>` writes UTF-8 without BOM through a temporary sibling file, using File.Replace where supported and a same-directory Move-Item overwrite fallback where it is not.
+- `Invoke-GwmHistoryRetention -HistoryDirectory <path> -Mode Scan|Sync -Format json|html -RetentionCount <integer>` prunes only matching direct-child regular files; 0 disables pruning. It returns Success, DeletedCount, PreservedCount, and Warnings.
+- History retention is isolated by mode and format. Latest files, malformed names, unrelated files, directories, and reparse-point entries are preserved. Retention revalidates the canonical parent and filename immediately before deletion.
+- Module functions are not wired into the CLI in M2-C; M2-E owns integration.
+
 ### M2-D — Operational logging
 
 **Primary ownership:** new `src/GWM.Logging.psm1` and logging tests.
@@ -250,12 +259,12 @@ Record:
 ## Current implementation checkpoint
 
 - M2-A report contract: implemented on `feature/m2-reporting-observability`; the user ran `Invoke-Pester .\tests` on Windows PowerShell 5.1 / Pester 3.4.0 and confirmed **45 passed, 0 failed, 0 skipped** (64.4 seconds).
-- M2-B HTML renderer: `src/GWM.Reporting.psm1` and `tests/GWM.Reporting.Tests.ps1` have been added on the implementation branch. Tests are authored but have **not yet been executed**. Browser/offline inspection is also pending.
-- M2-C history/retention: not started.
+- M2-B HTML renderer: implemented and locally verified by the user on Windows PowerShell 5.1 / Pester 3.4.0 (**51 passed, 0 failed, 0 skipped**); visual browser preview confirmed correct title, Unicode, and layout. Offline browser verification remains unrecorded. M2-B follow-up fix committed as `de4e9f7`.
+- M2-C history/retention: module and tests authored on `feature/m2-reporting-observability`; local PowerShell/Pester execution and review are pending. The module is not wired into the CLI.
 - M2-D operational logging: not started.
 - M2-E CLI/configuration integration: not started. The renderer is intentionally not wired into `scripts/GWM.ps1` yet.
 - No M2 implementation has been merged to `main`.
 
 ## Status
 
-M2 implementation is in progress. Do not mark M2-B complete until its Pester tests and manual offline browser review have been run and recorded.
+M2 implementation is in progress. M2-B automated and visual checks are recorded; offline browser verification remains pending. M2-C is implemented but not yet verified; do not mark it complete until its Pester tests and safety checks have been run and recorded.
