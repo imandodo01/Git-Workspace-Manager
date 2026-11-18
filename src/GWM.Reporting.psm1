@@ -74,6 +74,11 @@ function New-GwmHtmlReport {
                 throw ("Report is missing required property '{0}'." -f $requiredProperty)
             }
         }
+        foreach ($summaryProperty in @('Updated', 'UpToDate', 'NeedsAttention', 'Failed')) {
+            if ($null -eq $Report.Summary.PSObject.Properties[$summaryProperty]) {
+                throw ("Report Summary is missing required property '{0}'." -f $summaryProperty)
+            }
+        }
 
         if ([string]::IsNullOrWhiteSpace($OutputPath)) {
             throw 'OutputPath must not be empty.'
@@ -174,9 +179,7 @@ function New-GwmHtmlReport {
                     [pscustomobject]@{ Label='Recommended action'; Name='RecommendedAction' }
                 )) {
                     $value = Get-GwmHtmlPropertyValue -InputObject $result -Name $field.Name
-                    if ($null -ne $value) {
-                        Add-GwmHtmlDetail -Builder $builder -Label $field.Label -Value $value
-                    }
+                    Add-GwmHtmlDetail -Builder $builder -Label $field.Label -Value $value
                 }
                 [void]$builder.AppendLine('</dl></article>')
             }
