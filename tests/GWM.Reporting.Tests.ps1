@@ -29,7 +29,7 @@ Describe 'GWM self-contained HTML report renderer' {
 
             $write.Success | Should Be $true
             (Test-Path -LiteralPath $outputPath) | Should Be $true
-            $html = Get-Content -LiteralPath $outputPath -Raw
+            $html = [System.IO.File]::ReadAllText($outputPath, [System.Text.Encoding]::UTF8)
             $html | Should Match '<!doctype html>'
             $html | Should Match 'Schema version'
             $html | Should Match 'Run ID'
@@ -63,7 +63,7 @@ Describe 'GWM self-contained HTML report renderer' {
             $outputPath = Join-Path $root 'hostile.html'
 
             $write = New-GwmHtmlReport -Report $report -OutputPath $outputPath
-            $html = Get-Content -LiteralPath $outputPath -Raw
+            $html = [System.IO.File]::ReadAllText($outputPath, [System.Text.Encoding]::UTF8)
 
             $write.Success | Should Be $true
             $html | Should Match '&lt;script&gt;alert\(&quot;x&quot;\)&lt;/script&gt;'
@@ -87,7 +87,7 @@ Describe 'GWM self-contained HTML report renderer' {
             $outputPath = Join-Path $root 'empty.html'
 
             $write = New-GwmHtmlReport -Report $report -OutputPath $outputPath
-            $html = Get-Content -LiteralPath $outputPath -Raw
+            $html = [System.IO.File]::ReadAllText($outputPath, [System.Text.Encoding]::UTF8)
 
             $write.Success | Should Be $true
             $html | Should Match 'No repositories were found in this workspace.'
@@ -102,8 +102,9 @@ Describe 'GWM self-contained HTML report renderer' {
         $root = Join-Path ([System.IO.Path]::GetTempPath()) ('gwm-html-' + [guid]::NewGuid().ToString('N'))
         try {
             $longPath = 'C:\fixtures\' + (('long-segment-' * 24) + 'repository')
+            $unicodeName = -join @([char]0x8CC7, [char]0x6599, [char]0x5EAB, '-', [char]0x6771, [char]0x4EAC, '-', [char]::ConvertFromUtf32(0x1F600))
             $result = [pscustomobject]@{
-                Name='資料庫-東京-😀'; Path=$longPath; SyncStatus='UPDATED'
+                Name=$unicodeName; Path=$longPath; SyncStatus='UPDATED'
                 BeforeCommit='before-sha'; AfterCommit='after-sha'; TargetCommit='target-sha'
                 Ahead=0; Behind=0; ExitCode=0; Reason='Fast-forward completed.'
                 RecommendedAction='No action required.'
@@ -112,10 +113,10 @@ Describe 'GWM self-contained HTML report renderer' {
             $outputPath = Join-Path $root 'sync.html'
 
             $write = New-GwmHtmlReport -Report $report -OutputPath $outputPath
-            $html = Get-Content -LiteralPath $outputPath -Raw
+            $html = [System.IO.File]::ReadAllText($outputPath, [System.Text.Encoding]::UTF8)
 
             $write.Success | Should Be $true
-            $html | Should Match '資料庫-東京-😀'
+            $html | Should Match ([regex]::Escape($unicodeName))
             $html | Should Match 'before-sha'
             $html | Should Match 'after-sha'
             $html | Should Match 'target-sha'
