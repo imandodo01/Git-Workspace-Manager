@@ -100,7 +100,7 @@ function New-GwmHtmlReport {
         [void]$builder.AppendLine('*{box-sizing:border-box}body{margin:0;background:var(--page);color:var(--ink);font:14px/1.5 "Segoe UI",Arial,sans-serif}')
         [void]$builder.AppendLine('.container{max-width:1200px;margin:0 auto;padding:32px 24px}h1{margin:0 0 6px;font-size:28px}.subtitle{color:var(--muted);margin:0 0 24px}')
         [void]$builder.AppendLine('.panel,.repo-card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;margin:16px 0;box-shadow:0 1px 2px rgba(20,32,50,.04)}')
-        [void]$builder.AppendLine('.metadata,.details{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}.detail dt{font-size:12px;color:var(--muted)}.detail dd{margin:2px 0 0;overflow-wrap:anywhere}')
+        [void]$builder.AppendLine('.metadata,.details{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}.metadata{margin:0}.detail dt{font-size:12px;color:var(--muted)}.detail dd{margin:2px 0 0;overflow-wrap:anywhere}')
         [void]$builder.AppendLine('.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}.metric{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px}.metric strong{display:block;font-size:26px}.metric span{color:var(--muted)}')
         [void]$builder.AppendLine('.repo-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.repo-heading h2{font-size:17px;margin:0;overflow-wrap:anywhere}.status{display:inline-block;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:600;overflow-wrap:anywhere}.status-ok{background:#e5f4ec;color:var(--ok)}.status-attention{background:#fff3d9;color:var(--warn)}.status-failed{background:#fde8e8;color:var(--bad)}')
         [void]$builder.AppendLine('.details{margin-top:16px}.detail{min-width:0}.detail dd{overflow-wrap:anywhere}.section-title{font-size:18px;margin:26px 0 10px}.empty{color:var(--muted);text-align:center;padding:24px}.warnings{border-left:4px solid var(--warn)}')
@@ -113,14 +113,14 @@ function New-GwmHtmlReport {
         [void]$builder.AppendLine('</h1>')
         [void]$builder.AppendLine('<p class="subtitle">Repository workspace report</p>')
 
-        [void]$builder.AppendLine('<section class="panel metadata" aria-label="Run metadata">')
+        [void]$builder.AppendLine('<dl class="panel metadata" aria-label="Run metadata">')
         Add-GwmHtmlDetail -Builder $builder -Label 'Schema version' -Value $Report.SchemaVersion
         Add-GwmHtmlDetail -Builder $builder -Label 'Run ID' -Value $Report.RunId
         Add-GwmHtmlDetail -Builder $builder -Label 'Generated at' -Value $Report.GeneratedAt
         Add-GwmHtmlDetail -Builder $builder -Label 'Duration (ms)' -Value $Report.DurationMs
         Add-GwmHtmlDetail -Builder $builder -Label 'Workspace root' -Value $Report.WorkspaceRoot
         Add-GwmHtmlDetail -Builder $builder -Label 'Repositories' -Value $Report.RepositoryCount
-        [void]$builder.AppendLine('</section>')
+        [void]$builder.AppendLine('</dl>')
 
         [void]$builder.AppendLine('<section class="summary" aria-label="Run summary">')
         foreach ($metric in @(
