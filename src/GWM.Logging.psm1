@@ -111,7 +111,7 @@ function Invoke-GwmLogRetention {
             $eligible += $item
         }
 
-        $ordered = @($eligible | Sort-Object Name -Descending)
+        $ordered = @($eligible | Sort-Object @{ Expression = { if ($_.Name -match '^gwm-(?:scan|sync)-(\d{8}T\d{9})-') { $Matches[1] } }; Descending = $true }, @{ Expression = { $_.Name }; Descending = $true })
         if ($ordered.Count -gt $RetentionCount) {
             foreach ($item in @($ordered | Select-Object -Skip $RetentionCount)) {
                 try {
