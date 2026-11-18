@@ -114,15 +114,15 @@ Describe 'GWM operational logging' {
                 $name = New-GwmLogFileName -Report $report
                 [System.IO.File]::WriteAllText((Join-Path $root $name), [string]$i)
             }
-            $sync = New-GwmLoggingFixtureReport -Mode Sync -RunId '55555555555555555555555555555555'
+            $sync = New-GwmLoggingFixtureReport -Mode Sync -RunId '55555555555555555555555555555555' -GeneratedAt '2026-11-10T10:00:00.000+07:00'
             [System.IO.File]::WriteAllText((Join-Path $root (New-GwmLogFileName -Report $sync)), 'sync')
             [System.IO.File]::WriteAllText((Join-Path $root 'notes.txt'), 'keep')
 
             $result = Invoke-GwmLogRetention -LogDirectory $root -RetentionCount 2
             $result.Success | Should Be $true
-            $result.DeletedCount | Should Be 1
-            @(Get-ChildItem -LiteralPath $root -Filter 'gwm-scan-*.log').Count | Should Be 1
-            @(Get-ChildItem -LiteralPath $root -Filter 'gwm-sync-*.log').Count | Should Be 1
+            $result.DeletedCount | Should Be 2
+            @(Get-ChildItem -LiteralPath $root -Filter 'gwm-scan-*.log').Count | Should Be 2
+            @(Get-ChildItem -LiteralPath $root -Filter 'gwm-sync-*.log').Count | Should Be 0
             @(Get-ChildItem -LiteralPath $root -Filter 'gwm-*.log').Count | Should Be 2
             (Test-Path -LiteralPath (Join-Path $root 'notes.txt')) | Should Be $true
         }
