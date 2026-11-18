@@ -16,17 +16,17 @@
   },
   "reporting": {
     "formats": [
-      "html",
-      "json"
+      "json",
+      "html"
     ],
-    "outputDirectory": "../reports",
+    "outputDirectory": "reports",
     "keepHistory": true,
-    "maxHistory": 30
+    "retentionCount": 30
   },
   "logging": {
     "enabled": true,
-    "outputDirectory": "../logs",
-    "maxHistory": 30
+    "path": "logs",
+    "retentionCount": 30
   },
   "integration": {
     "vscodeEnabled": true,
