@@ -286,6 +286,51 @@ Record:
 - Confirmation that no real workspace repository was used as a fixture.
 - Remaining defects and next action.
 
+
+## Session handoff — 2026-11-19
+
+Development was intentionally paused after the M2-E1 verification checkpoint. No M2-E2 implementation was started in this session.
+
+### Saved state
+- Repository: `imandodo01/Git-Workspace-Manager`
+- Working branch: `feature/m2-reporting-observability`
+- Last code repair: `5e392bb5214fcd3b2f8b5a32b74acbae6c30eaa2` — removed the duplicated malformed tail from `src/GWM.Core.psm1`.
+- Latest documentation checkpoint: `6f1e7edb4a88df68e0ec7781444336b1c714c615` — records M2-E1 verification.
+- The user's last reported local Git state, before the documentation checkpoint was committed remotely, was clean and aligned with `5e392bb`.
+- The documentation checkpoint is a subsequent remote commit. Therefore, the user's local branch is expected to be one commit behind until the next session pulls it. This is not an uncommitted-change or data-loss condition.
+
+### Verified evidence
+- User ran `git pull --ff-only origin feature/m2-reporting-observability` and received commit `5e392bb`.
+- `git status --short --branch` showed a clean working tree.
+- `git log -1 --oneline` showed `5e392bb`.
+- PowerShell parser validation of `src/GWM.Core.psm1`: **Parser OK**.
+- Full test command: `Invoke-Pester .\\tests`.
+- Result: **72 passed, 0 failed, 0 skipped, 0 pending, 0 inconclusive**, 64.3 seconds.
+- Exact PowerShell and Pester versions were not included in the supplied output and must not be inferred.
+- These results verify the configuration checkpoint against the full available Pester suite. They do not constitute end-to-end CLI integration or full M2 acceptance.
+
+### Remaining work / known gaps
+1. M2-E2: define and document exit-code precedence for repository outcomes versus report/history/log artifact failures.
+2. Integrate the stable M2-A through M2-D modules into `scripts/GWM.ps1`.
+3. Add disposable-repository integration tests for Scan and Sync, including partial artifact-write failures.
+4. Update the relevant operational, security, configuration, test-plan, and changelog documentation as integration behavior becomes final.
+5. Complete offline HTML browser verification for M2-B.
+6. Run combined regression and manual history/log retention checks; record exact PowerShell and Pester versions.
+7. Review the final diff for accidental local paths, secrets, generated reports/logs, and unrelated files.
+8. Keep M2 changes on this feature branch until separately reviewed; no M2 implementation has been merged to `main`.
+
+### Resume procedure
+At the next session, first run:
+```powershell
+git status --short --branch
+git pull --ff-only origin feature/m2-reporting-observability
+git status --short --branch
+git log -1 --oneline
+```
+Confirm the local tree is clean and the latest documentation commit is present. Then reread the current project instructions and applicable AI Engineering Standard policies, inspect `scripts/GWM.ps1`, its tests, and the current diff before starting M2-E2. Do not begin CLI integration until the exit-code precedence contract is settled.
+
+**Session disposition:** safely paused; remote feature branch contains the verified code repair and documentation checkpoint; no unfinished local edit was reported by the user. M2 remains in progress, not released or merged.
+
 ## Current implementation checkpoint
 
 - M2-A report contract: implemented on `feature/m2-reporting-observability`; the user ran `Invoke-Pester .\tests` on Windows PowerShell 5.1 / Pester 3.4.0 and confirmed **45 passed, 0 failed, 0 skipped** (64.4 seconds).
