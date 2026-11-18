@@ -160,6 +160,17 @@ Deliverables:
 Exit check:
 - Logs contain enough diagnostic context to troubleshoot but no secret-bearing values.
 
+### M2-D implementation contract
+
+- `Get-GwmLoggingOptions -Settings <settings>` defaults logging to enabled, `logs`, and retention 30; validates boolean `enabled`, non-empty relative `path`, and integer `retentionCount` from 0 through 2147483647.
+- `New-GwmLogFileName -Report <envelope>` validates Scan/Sync mode, 32-hex RunId, and GeneratedAt; returns `gwm-{mode}-{yyyyMMddTHHmmssfff}-{runId}.log`.
+- `Write-GwmRunLog -ProjectRoot -Report -Events [-Enabled] [-RelativePath] [-RetentionCount]` writes one UTF-8 NDJSON file per run. Only Timestamp, RunId, Mode, Event, Repository display name, Error, and the four known summary counts are serialized. Arbitrary event properties, process arguments, environment variables, and file contents are ignored.
+- URL user information and sensitive query values use the Core redaction primitive; common secret assignments and Bearer values are additionally redacted before serialization.
+- Disabled logging returns success without resolving or creating the log directory.
+- Log paths are resolved beneath ProjectRoot through the M2-C output-path helper; existing reparse-point segments are rejected. New files use CreateNew semantics and are never overwritten.
+- `Invoke-GwmLogRetention -LogDirectory [-RetentionCount 30]` applies one retention pool across Scan and Sync log files; 0 disables pruning. Only matching direct-child GWM log files are eligible; unrelated names, directories, and reparse points are preserved.
+- Logging and retention failures are returned as warnings/results; callers must preserve the repository operation result. M2-D does not modify CLI exit codes or Git decisions.
+
 ### M2-E — Security, integration, tests, documentation
 
 **Primary ownership:** integration owner; shared entry point and config only after A–D modules have stable interfaces.
@@ -260,11 +271,11 @@ Record:
 
 - M2-A report contract: implemented on `feature/m2-reporting-observability`; the user ran `Invoke-Pester .\tests` on Windows PowerShell 5.1 / Pester 3.4.0 and confirmed **45 passed, 0 failed, 0 skipped** (64.4 seconds).
 - M2-B HTML renderer: implemented and locally verified by the user on Windows PowerShell 5.1 / Pester 3.4.0 (**51 passed, 0 failed, 0 skipped**); visual browser preview confirmed correct title, Unicode, and layout. Offline browser verification remains unrecorded. M2-B follow-up fix committed as `de4e9f7`.
-- M2-C history/retention: module and tests authored on `feature/m2-reporting-observability`; local PowerShell/Pester execution and review are pending. The module is not wired into the CLI.
-- M2-D operational logging: not started.
+- M2-C history/retention: implemented and verified by the user on Windows PowerShell 5.1 / Pester 3.4.0 as part of the full suite (**60 passed, 0 failed, 0 skipped, 0 pending, 0 inconclusive**, 62.72 seconds). The module is not wired into the CLI.
+- M2-D operational logging: module and tests authored on `feature/m2-reporting-observability`; local PowerShell/Pester execution is pending. The module is not wired into the CLI.
 - M2-E CLI/configuration integration: not started. The renderer is intentionally not wired into `scripts/GWM.ps1` yet.
 - No M2 implementation has been merged to `main`.
 
 ## Status
 
-M2 implementation is in progress. M2-B automated and visual checks are recorded; offline browser verification remains pending. M2-C is implemented but not yet verified; do not mark it complete until its Pester tests and safety checks have been run and recorded.
+M2 implementation is in progress. M2-B automated and visual checks are recorded; offline browser verification remains pending. M2-C is implemented and verified by the user on Windows PowerShell 5.1 / Pester 3.4.0. M2-D is implemented but not yet verified; do not mark it complete until its Pester tests and safety checks have been run and recorded.
