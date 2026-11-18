@@ -57,7 +57,7 @@ Describe 'GWM operational logging' {
                 [pscustomobject]@{
                     Event='FetchFailed'
                     Timestamp='2026-11-18T10:00:00.000+07:00'
-                    Repository='repo-one'
+                    Repository=('repo-' + [char]0x8CC7 + [char]0x6599 + '-' + [char]::ConvertFromUtf32(0x1F600))
                     Error='fatal: https://alice:super-secret@example.invalid/repo.git?token=abc123 password=hunter2 Bearer eyJhbGciOiJIUzI1NiJ9'
                     Counts=[pscustomobject]@{ Failed=1; Updated=0 }
                     Arguments=@('--config','credential.helper=secret')
@@ -69,10 +69,10 @@ Describe 'GWM operational logging' {
             Test-Path -LiteralPath $result.Path | Should Be $true
             $raw = [System.IO.File]::ReadAllText($result.Path, [System.Text.Encoding]::UTF8)
             $raw | Should Match 'FetchFailed'
-            $raw | Should Match 'repo-one'
+            $raw | Should Match ([regex]::Escape(('repo-' + [char]0x8CC7 + [char]0x6599 + '-' + [char]::ConvertFromUtf32(0x1F600)))
             $raw | Should Match '\[REDACTED\]'
             $raw | Should Not Match 'super-secret|abc123|hunter2|eyJhbGci|must-not-appear|credential.helper'
-            $lines = @($raw.Trim().Split([Environment]::NewLine))
+            $lines = @($raw.Trim() -split [regex]::Escape([Environment]::NewLine))
             $lines.Count | Should Be 1
             $entry = ConvertFrom-Json -InputObject $lines[0]
             $entry.RunId | Should Be $report.RunId
