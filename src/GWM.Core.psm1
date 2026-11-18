@@ -437,6 +437,8 @@ function New-GwmRunReport {
             [string]$result.SyncStatus
         }
 
+        # Preserve each repository's original status; unknown and non-success
+        # states are conservatively counted as NeedsAttention.
         switch ($status) {
             'UPDATED' { $counts.Updated++ }
             'UP_TO_DATE' { $counts.UpToDate++ }
