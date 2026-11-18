@@ -194,7 +194,7 @@ function New-GwmHtmlReport {
 
         [void]$builder.AppendLine('</main></body></html>')
         $html = $builder.ToString()
-        [System.IO.File]::WriteAllText($resolvedPath, $html, (New-Object System.Text.UTF8Encoding($false)))
+        [System.IO.File]::WriteAllText($resolvedPath, $html, ([System.Text.UTF8Encoding]::new($false)))
 
         return [pscustomobject]@{
             Success = $true
