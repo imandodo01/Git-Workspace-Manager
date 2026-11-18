@@ -24,6 +24,13 @@ Describe 'GWM shared run report contract' {
         $scan.WorkspaceRoot | Should Be 'C:\fixtures'
         $scan.GeneratedAt | Should Be '2026-11-18T10:00:02.5000000+07:00'
         @($scan.OutputWarnings).Count | Should Be 0
+
+        $json = $scan | ConvertTo-Json -Depth 8
+        $roundTrip = $json | ConvertFrom-Json
+        $roundTrip.SchemaVersion | Should Be '1.0'
+        $roundTrip.Mode | Should Be 'Scan'
+        $roundTrip.Summary.UpToDate | Should Be 1
+        $roundTrip.Results[0].Classification | Should Be 'UP_TO_DATE'
     }
 
     It 'normalizes Scan classifications without changing result fields' {
