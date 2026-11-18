@@ -23,14 +23,18 @@ M2 is a reporting and operational visibility milestone. It is not a GUI mileston
 Define one stable, versioned run envelope consumed by JSON and HTML renderers.
 
 Minimum envelope fields:
-- `schemaVersion`: report schema version.
-- `runId`: unique identifier for this execution.
-- `mode`: `Scan` or `Sync`.
-- `generatedAt`: ISO-8601 timestamp with local offset.
-- `durationMs`: elapsed run duration.
-- `repositoryCount`: number of repositories processed.
-- `summary`: aggregate status counts, including zero-valued statuses.
-- `results`: per-repository results using the existing M1 result data, normalized without losing fields.
+- `SchemaVersion`: report schema version, initially `1.0`.
+- `RunId`: unique GUID in `N` format for this execution.
+- `Mode`: `Scan` or `Sync`.
+- `GeneratedAt`: ISO-8601 round-trip timestamp with local offset.
+- `DurationMs`: non-negative elapsed run duration in milliseconds.
+- `WorkspaceRoot`: resolved workspace path.
+- `RepositoryCount`: number of repositories processed.
+- `Summary`: stable aggregate counts: `Updated`, `UpToDate`, `NeedsAttention`, and `Failed`, including zero-valued statuses.
+- `Results`: per-repository results using the existing M1 result data, preserving original property names and meanings.
+- `OutputWarnings`: array reserved for report/history/log output warnings; it must not overwrite repository outcomes.
+
+Use PascalCase for the envelope and retain the existing PascalCase M1 result properties. For Scan, map `UP_TO_DATE` to `UpToDate`, `FAILED` to `Failed`, and every other classification (including `NEEDS_ATTENTION`, `AHEAD`, `BEHIND`, `DIVERGED`, `UNKNOWN`, and `INVALID_REPOSITORY`) to `NeedsAttention`. Scan never increments `Updated`. For Sync, map `UPDATED`, `UP_TO_DATE`, and `FAILED` to their matching buckets; all other statuses map to `NeedsAttention`. Preserve the original status in each result. Unknown divergence values remain `null`, never coerced to zero.
 
 Per-repository content should retain the useful M1 fields: repository name/path, branch/upstream where available, classification or sync status, ahead/behind, changed-file summary, before/after/target commits where relevant, reason, recommended action, and fetch/update outcome where relevant.
 
@@ -108,7 +112,7 @@ Parallelism is conditional on available contributors/agents and isolated ownersh
 ## Acceptance criteria
 
 ### Report contract and output
-- [ ] Scan and Sync produce the same documented envelope shape with `schemaVersion`, `runId`, `mode`, `generatedAt`, `durationMs`, `repositoryCount`, `summary`, and `results`.
+- [ ] Scan and Sync produce the same documented PascalCase envelope shape with `SchemaVersion`, `RunId`, `Mode`, `GeneratedAt`, `DurationMs`, `WorkspaceRoot`, `RepositoryCount`, `Summary`, `Results`, and `OutputWarnings`.
 - [ ] Summary counts are deterministic and include zero counts for supported statuses.
 - [ ] Existing latest JSON filenames remain available.
 - [ ] Matching latest HTML reports are produced for both modes.
