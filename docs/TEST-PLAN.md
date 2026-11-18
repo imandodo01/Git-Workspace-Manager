@@ -49,6 +49,12 @@ The user confirmed **41 passed, 0 failed** on Windows PowerShell 5.1 with Pester
 
 The assistant performed static source and test review; it did not execute PowerShell or Pester in the user's Windows environment. GitHub reported no CI workflow run or commit status check for the M1 merge commit.
 
+### Current automated coverage — M2-A
+
+The user confirmed `Invoke-Pester .\tests` completed with **45 passed, 0 failed, 0 skipped** in 64.4 seconds on the current Windows PowerShell / Pester environment. This includes the four shared report contract tests in `tests/GWM.ReportingContract.Tests.ps1`.
+
+M2-B HTML renderer tests have been authored in `tests/GWM.Reporting.Tests.ps1`, but have not yet been executed. The renderer module is not yet wired into the CLI; that integration belongs to M2-E.
+
 ## 4. Safety assertions
 
 For dirty and diverged repositories:
@@ -82,11 +88,12 @@ For the guarded fast-forward executor:
 
 ## 6. M2 planned verification — Reporting & Observability
 
-These are planned checks, not current implementation coverage:
+The shared report contract is implemented and its four contract tests have passed as recorded above. The HTML renderer module and focused tests are present on the implementation branch, but the renderer tests have not been run and CLI integration is pending.
 
-- Report contract: both modes serialize the same versioned envelope and deterministic summary counts.
-- HTML: Scan and Sync produce self-contained offline reports from the shared report model.
-- HTML safety: hostile repository names, paths, branch names, reasons, and Git output are encoded as text.
+Remaining checks:
+- HTML: integrate Scan and Sync output in M2-E, then verify self-contained offline reports from the shared report model.
+- HTML safety: execute the renderer tests for hostile repository names, paths, branch names, reasons, and output warnings; inspect rendered output manually in a browser.
+
 - History: unique filenames under rapid repeated runs; latest outputs remain correct.
 - Retention: only old GWM-generated files under the validated report directory are removed; unrelated sentinel files and files outside the directory remain untouched.
 - Configuration: invalid output directories, negative/invalid retention limits, and malformed settings fail safely with actionable messages.
