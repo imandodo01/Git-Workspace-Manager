@@ -34,11 +34,13 @@ function Get-GwmHtmlStatusClass {
     [CmdletBinding()]
     param([AllowNull()][string]$Status)
 
-    switch ($Status) {
-        { $_ -in @('UP_TO_DATE', 'UPDATED') } { return 'status-ok' }
-        'FAILED' { return 'status-failed' }
-        default { return 'status-attention' }
+    if ($Status -eq 'UP_TO_DATE' -or $Status -eq 'UPDATED') {
+        return 'status-ok'
     }
+    if ($Status -eq 'FAILED') {
+        return 'status-failed'
+    }
+    return 'status-attention'
 }
 
 function Add-GwmHtmlDetail {
