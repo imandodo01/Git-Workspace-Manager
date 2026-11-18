@@ -411,4 +411,59 @@ function Invoke-GwmSyncForRepositories {
     return @($results)
 }
 
-Export-ModuleMember -Function Get-GwmConfiguration, Find-GwmRepositories, Invoke-GwmGit, Get-GwmRepositoryState, Get-GwmStateClassification, ConvertTo-GwmRedactedRemoteUrl, Get-GwmSyncEligibility, Test-GwmRepositoryStateUnchanged, Invoke-GwmFetch, Invoke-GwmFetchForRepositories, Invoke-GwmFastForward, Invoke-GwmSyncForRepositories
+
+function New-GwmRunReport {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][ValidateSet('Scan', 'Sync')][string]$Mode,
+        [Parameter(Mandatory = $true)][string]$WorkspaceRoot,
+        [AllowEmptyCollection()][object[]]$Results = @(),
+        [Parameter(Mandatory = $true)][DateTimeOffset]$StartedAt,
+        [Parameter(Mandatory = $true)][DateTimeOffset]$FinishedAt
+    )
+
+    $counts = @{
+        Updated = 0
+        UpToDate = 0
+        NeedsAttention = 0
+        Failed = 0
+    }
+
+    foreach ($result in @($Results)) {
+        $status = if ($Mode -eq 'Scan') {
+            [string]$result.Classification
+        }
+        else {
+            [string]$result.SyncStatus
+        }
+
+        switch ($status) {
+            'UPDATED' { $counts.Updated++ }
+            'UP_TO_DATE' { $counts.UpToDate++ }
+            'FAILED' { $counts.Failed++ }
+            default { $counts.NeedsAttention++ }
+        }
+    }
+
+    $durationMs = [int][math]::Max(0, [math]::Round(($FinishedAt - $StartedAt).TotalMilliseconds))
+
+    [pscustomobject]@{
+        SchemaVersion = '1.0'
+        RunId = [guid]::NewGuid().ToString('N')
+        Mode = $Mode
+        GeneratedAt = $FinishedAt.ToString('o')
+        DurationMs = $durationMs
+        WorkspaceRoot = $WorkspaceRoot
+        RepositoryCount = @($Results).Count
+        Summary = [pscustomobject]@{
+            Updated = $counts.Updated
+            UpToDate = $counts.UpToDate
+            NeedsAttention = $counts.NeedsAttention
+            Failed = $counts.Failed
+        }
+        Results = @($Results)
+        OutputWarnings = @()
+    }
+}
+
+Export-ModuleMember -Function Get-GwmConfiguration, Find-GwmRepositories, Invoke-GwmGit, Get-GwmRepositoryState, Get-GwmStateClassification, ConvertTo-GwmRedactedRemoteUrl, Get-GwmSyncEligibility, Test-GwmRepositoryStateUnchanged, Invoke-GwmFetch, Invoke-GwmFetchForRepositories, Invoke-GwmFastForward, Invoke-GwmSyncForRepositories, New-GwmRunReport
