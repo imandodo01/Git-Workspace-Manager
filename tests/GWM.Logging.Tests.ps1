@@ -96,7 +96,7 @@ Describe 'GWM operational logging' {
             $before = $report | ConvertTo-Json -Compress
             $result = Write-GwmRunLog -ProjectRoot $root -Report $report -Events @() -RelativePath '..\outside'
             $result.Success | Should Be $false
-            $result.Warnings.Count | Should BeGreaterThan 0
+            ($result.Warnings.Count -gt 0) | Should Be $true
             ($report | ConvertTo-Json -Compress) | Should Be $before
             (Test-Path -LiteralPath (Join-Path (Split-Path $root -Parent) 'outside')) | Should Be $false
         }
