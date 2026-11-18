@@ -161,6 +161,7 @@ function New-GwmHtmlReport {
                     [pscustomobject]@{ Label='Path'; Name='Path' },
                     [pscustomobject]@{ Label='Branch'; Name='Branch' },
                     [pscustomobject]@{ Label='Upstream'; Name='Upstream' },
+                    [pscustomobject]@{ Label='Remote'; Name='Remote' },
                     [pscustomobject]@{ Label='HEAD'; Name='Head' },
                     [pscustomobject]@{ Label='Ahead'; Name='Ahead' },
                     [pscustomobject]@{ Label='Behind'; Name='Behind' },
