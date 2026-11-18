@@ -4,11 +4,11 @@ Import-Module -Name $coreModulePath -Force
 Import-Module -Name $reportingModulePath -Force
 
 function New-GwmHtmlTestReport {
-    param([object[]]$Results = @(), [object[]]$Warnings = @())
+    param([object[]]$Results = @(), [object[]]$Warnings = @(), [string]$Mode = 'Scan')
 
     $startedAt = [DateTimeOffset]::Parse('2026-11-18T10:00:00+07:00')
     $finishedAt = [DateTimeOffset]::Parse('2026-11-18T10:00:01+07:00')
-    $report = New-GwmRunReport -Mode 'Scan' -WorkspaceRoot 'C:\fixtures' -Results $Results -StartedAt $startedAt -FinishedAt $finishedAt
+    $report = New-GwmRunReport -Mode $Mode -WorkspaceRoot 'C:\fixtures' -Results $Results -StartedAt $startedAt -FinishedAt $finishedAt
     $report.OutputWarnings = @($Warnings)
     return $report
 }
@@ -91,6 +91,36 @@ Describe 'GWM self-contained HTML report renderer' {
             $write.Success | Should Be $true
             $html | Should Match 'No repositories were found in this workspace.'
             $html | Should Match '0'
+        }
+        finally {
+            if (Test-Path -LiteralPath $root) { Remove-Item -LiteralPath $root -Recurse -Force }
+        }
+    }
+
+    It 'renders Sync fields, Unicode, and long paths' {
+        $root = Join-Path ([System.IO.Path]::GetTempPath()) ('gwm-html-' + [guid]::NewGuid().ToString('N'))
+        try {
+            $longPath = 'C:\fixtures\' + (('long-segment-' * 24) + 'repository')
+            $result = [pscustomobject]@{
+                Name='資料庫-東京-😀'; Path=$longPath; SyncStatus='UPDATED'
+                BeforeCommit='before-sha'; AfterCommit='after-sha'; TargetCommit='target-sha'
+                Ahead=0; Behind=0; ExitCode=0; Reason='Fast-forward completed.'
+                RecommendedAction='No action required.'
+            }
+            $report = New-GwmHtmlTestReport -Results @($result) -Mode 'Sync'
+            $outputPath = Join-Path $root 'sync.html'
+
+            $write = New-GwmHtmlReport -Report $report -OutputPath $outputPath
+            $html = Get-Content -LiteralPath $outputPath -Raw
+
+            $write.Success | Should Be $true
+            $html | Should Match '資料庫-東京-😀'
+            $html | Should Match 'before-sha'
+            $html | Should Match 'after-sha'
+            $html | Should Match 'target-sha'
+            $html | Should Match 'Fast-forward completed.'
+            $html | Should Match ([regex]::Escape($longPath))
+            $html | Should Match 'UPDATED'
         }
         finally {
             if (Test-Path -LiteralPath $root) { Remove-Item -LiteralPath $root -Recurse -Force }
