@@ -185,6 +185,20 @@ Tasks:
 7. Update README, architecture, configuration, security, test plan, and changelog.
 8. Inspect final diff and verify tracked files contain no local config, logs, reports, secrets, or personal workspace paths.
 
+#### M2-E1 — Configuration and validation checkpoint
+
+Implemented on the integration branch:
+- `Get-GwmConfiguration` now returns normalized `Reporting` and `Logging` settings alongside the existing workspace/Git settings.
+- Defaults: JSON + HTML, `reports`, history enabled, retention 30; logging enabled, `logs`, retention 30.
+- JSON is mandatory; only `json` and `html` are accepted, case-normalized, and duplicates are rejected.
+- Report/log output paths must be relative, non-empty, and contain no `.` or `..` segments; they resolve against `ProjectRoot`.
+- Boolean values must be JSON booleans. Retention must be a non-negative 32-bit integer.
+- Example configuration and `docs/CONFIGURATION.md` now use the validated keys: `reporting.outputDirectory`, `reporting.keepHistory`, `reporting.retentionCount`, `logging.path`, and `logging.retentionCount`.
+- Added `tests/GWM.Configuration.Tests.ps1` for defaults, normalized settings, path boundaries, formats, boolean types, and retention validation.
+- Automated tests have not yet been run for this checkpoint; local Windows PowerShell 5.1 / Pester verification is pending.
+
+The CLI does not consume these normalized settings yet. E2 owns that integration.
+
 Deliverables:
 - Integrated Scan/Sync output pipeline.
 - Config validation and updated examples.
@@ -273,9 +287,9 @@ Record:
 - M2-B HTML renderer: implemented and locally verified by the user on Windows PowerShell 5.1 / Pester 3.4.0 (**51 passed, 0 failed, 0 skipped**); visual browser preview confirmed correct title, Unicode, and layout. Offline browser verification remains unrecorded. M2-B follow-up fix committed as `de4e9f7`.
 - M2-C history/retention: implemented and verified by the user on Windows PowerShell 5.1 / Pester 3.4.0 as part of the full suite (**60 passed, 0 failed, 0 skipped, 0 pending, 0 inconclusive**, 62.72 seconds). The module is not wired into the CLI.
 - M2-D operational logging: implemented and verified by the user on the local Windows PowerShell environment. The user ran `Invoke-Pester .\\tests`: **67 passed, 0 failed, 0 skipped, 0 pending, 0 inconclusive** (62.47 seconds). The cross-mode retention test confirms chronological ordering by filename timestamp. The module is not wired into the CLI.
-- M2-E CLI/configuration integration: not started. The renderer is intentionally not wired into `scripts/GWM.ps1` yet.
+- M2-E1 configuration/validation: implemented in source, example settings, docs, and new tests; local Pester verification pending. M2-E2 CLI pipeline integration remains not started. The renderer is intentionally not wired into `scripts/GWM.ps1` yet.
 - No M2 implementation has been merged to `main`.
 
 ## Status
 
-M2 implementation is in progress. M2-B automated and visual checks are recorded; offline browser verification remains pending. M2-C is implemented and verified by the user on Windows PowerShell 5.1 / Pester 3.4.0. M2-D is implemented and its full Pester suite passed (67 passed, 0 failed). CLI integration and end-to-end output verification remain for M2-E.
+M2 implementation is in progress. M2-B automated and visual checks are recorded; offline browser verification remains pending. M2-C is implemented and verified by the user on Windows PowerShell 5.1 / Pester 3.4.0. M2-D is implemented and its full Pester suite passed (67 passed, 0 failed). M2-E1 configuration/validation is implemented but awaits local Pester verification; CLI integration and end-to-end output verification remain.
