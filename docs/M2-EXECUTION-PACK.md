@@ -247,8 +247,15 @@ Record:
 - Confirmation that no real workspace repository was used as a fixture.
 - Remaining defects and next action.
 
+## Current implementation checkpoint
+
+- M2-A report contract: implemented on `feature/m2-reporting-observability`; the user ran `Invoke-Pester .\tests` on Windows PowerShell 5.1 / Pester 3.4.0 and confirmed **45 passed, 0 failed, 0 skipped** (64.4 seconds).
+- M2-B HTML renderer: `src/GWM.Reporting.psm1` and `tests/GWM.Reporting.Tests.ps1` have been added on the implementation branch. Tests are authored but have **not yet been executed**. Browser/offline inspection is also pending.
+- M2-C history/retention: not started.
+- M2-D operational logging: not started.
+- M2-E CLI/configuration integration: not started. The renderer is intentionally not wired into `scripts/GWM.ps1` yet.
+- No M2 implementation has been merged to `main`.
+
 ## Status
 
-- M2 planning: prepared.
-- M2 implementation: not started by this document.
-- M2 automated tests: not executed as part of preparation.
+M2 implementation is in progress. Do not mark M2-B complete until its Pester tests and manual offline browser review have been run and recorded.
