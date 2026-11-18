@@ -3,6 +3,7 @@
 
 $script:GwmLoggingCorePath = Join-Path $PSScriptRoot 'GWM.Core.psm1'
 Import-Module -Name $script:GwmLoggingCorePath -Force
+Import-Module -Name (Join-Path $PSScriptRoot 'GWM.History.psm1') -Force
 
 function Get-GwmLoggingOptions {
     [CmdletBinding()]
@@ -81,7 +82,6 @@ function Invoke-GwmLogRetention {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)][string]$LogDirectory,
-        [Parameter(Mandatory = $true)][ValidateSet('Scan', 'Sync')][string]$Mode,
         [ValidateRange(0, 2147483647)][int]$RetentionCount = 30
     )
 
@@ -155,8 +155,6 @@ function Write-GwmRunLog {
     if (-not $Enabled) { return $result }
 
     try {
-        $historyModule = Join-Path $PSScriptRoot 'GWM.History.psm1'
-        Import-Module -Name $historyModule -Force
         $directory = Resolve-GwmOutputDirectory -ProjectRoot $ProjectRoot -RelativePath $RelativePath
         if (-not [System.IO.Directory]::Exists($directory)) {
             [void][System.IO.Directory]::CreateDirectory($directory)
@@ -191,17 +189,29 @@ function Write-GwmRunLog {
                 $entry.Error = ConvertTo-GwmSafeLogText -Value ([string]$event.Error)
             }
             if ($null -ne $event.PSObject.Properties['Counts']) {
-                $entry.Counts = $event.Counts
+                $counts = [ordered]@{}
+                foreach ($key in @('Updated', 'UpToDate', 'NeedsAttention', 'Failed')) {
+                    $property = $event.Counts.PSObject.Properties[$key]
+                    if ($null -ne $property -and $property.Value -is [ValueType]) {
+                        $counts[$key] = $property.Value
+                    }
+                }
+                $entry.Counts = [pscustomobject]$counts
             }
             $lines += (ConvertTo-Json -InputObject ([pscustomobject]$entry) -Depth 5 -Compress)
         }
 
         $content = if ($lines.Count -gt 0) { [string]::Join([Environment]::NewLine, [string[]]$lines) + [Environment]::NewLine } else { '' }
         $encoding = New-Object System.Text.UTF8Encoding($false)
-        [System.IO.File]::WriteAllText($path, $content, $encoding)
+        $bytes = $encoding.GetBytes($content)
+        $stream = [System.IO.File]::Open($path, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write, [System.IO.FileShare]::Read)
+        try {
+            if ($bytes.Length -gt 0) { $stream.Write($bytes, 0, $bytes.Length) }
+        }
+        finally { $stream.Dispose() }
         $result.Path = $path
 
-        $retention = Invoke-GwmLogRetention -LogDirectory $directory -Mode $Report.Mode -RetentionCount $RetentionCount
+        $retention = Invoke-GwmLogRetention -LogDirectory $directory -RetentionCount $RetentionCount
         if (-not $retention.Success -or $retention.Warnings.Count -gt 0) {
             $result.Warnings += @($retention.Warnings)
         }
